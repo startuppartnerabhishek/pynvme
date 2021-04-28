@@ -40,7 +40,7 @@ memsize := 2430   # minimal RAM: 4GB. 2.5GB for pynvme, 1.5GB for system
 #pytest test targets
 TESTS := driver_test.py
 
-.PHONY: all spdk doc
+.PHONY: all spdk doc sim_info
 
 all: clean
 	cd src; make
@@ -112,6 +112,25 @@ test:
 	make pytest 2>test_${pciaddr}.log | tee -a test_${pciaddr}.log
 	- sudo rm -rf .pytest_cache
 
+sim_info:
+	- uname -a
+	- date
+	- ip addr
+	- df
+	- whoami
+	- groups
+	- date
+	- pwd
+	- echo LOGFILE = ${LOGFILE}
+	- echo REPORTFILE = ${REPORTFILE}
+	- echo TEST_SET = ${TESTS}
+
+pytest_sim: sim_info
+	python3 -B -m pytest $(TESTS) -s -v -r Efsx --excelreport=${REPORTFILE} --verbose
+
+sim_test:
+	make pytest_sim 2>${LOGFILE} | tee -a ${LOGFILE}
+	- rm -rf .pytest_cache
 
 # local nvme tcp target
 ####################################
