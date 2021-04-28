@@ -268,3 +268,7 @@ extern void* intc_lookup_ctrl(struct spdk_nvme_ctrlr* ctrlr);
 extern void timeval_gettimeofday(struct timeval *tv);
 extern uint32_t timeval_to_us(struct timeval* t);
 
+/* pensando added functions */
+
+extern int pen_common_connectivity_check(char *src, char *dst, unsigned int count, int return_this);
+extern int pen_sim_connectivity_check(char *src, char *dst, unsigned int count, int return_this);

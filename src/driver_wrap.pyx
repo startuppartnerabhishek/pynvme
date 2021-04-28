@@ -2904,3 +2904,6 @@ if os.geteuid() == 0:
 
     # module fini
     atexit.register(d.driver_fini)
+
+def pen_common_connectivity_check(src, dst, count, return_this):
+    return d.pen_common_connectivity_check(src, dst, count, return_this)
