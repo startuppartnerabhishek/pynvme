@@ -2274,3 +2274,16 @@ void driver_init_num_queues(struct spdk_nvme_ctrlr* ctrlr, uint32_t cdw0)
   cpl.cdw0 = cdw0;
   return spdk_nvme_ctrlr_get_num_queues_done(ctrlr, &cpl);
 }
+
+
+int pen_common_connectivity_check(char *src, char *dst, unsigned int count, int return_this)
+{
+//  #error Woo-hoo - I can see me compile
+
+    if (count > 0)
+    {
+        memcpy(dst, src, count);
+    }
+
+    return return_this;
+}
