@@ -15,7 +15,7 @@ then
     echo $0 \"script_file::script_function\" >&2
     echo >&2
     echo -e "${YELLOW}EXAMPLE (try it from the pynvme base directory):${NC}" >&2
-    echo -e "${LIGHT_GREEN}$0 scripts/pensando/platform-sanity/connectivity.py::test_py_invocation${NC}" >&2
+    echo -e "${LIGHT_GREEN}$0 scripts/pensando/platform-sanity/connectivity_test.py::test_py_invocation${NC}" >&2
     echo >&2
     exit -1
 fi
