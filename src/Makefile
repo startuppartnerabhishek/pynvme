@@ -42,7 +42,7 @@ DRV_SIM_DIR = $(DRIVER_SRC_DIR)/sim
 DRV_COMMON_DIR = $(DRIVER_SRC_DIR)/common
 DRV_CYTHON_DIR = $(DRIVER_SRC_DIR)/cython
 
-SPDK_EXT_SRCS = $(DRV_SPDK_EXT_DIR)/driver.c $(DRV_SPDK_EXT_DIR)/intr_mgt.c $(DRV_SPDK_EXT_DIR)/ioworker.c  $(wildcard $(DRV_SIM_DIR)/*.c) $(wildcard $(DRV_COMMON_DIR)/*.c)
+SPDK_EXT_SRCS = $(DRV_SPDK_EXT_DIR)/driver.c $(DRV_SPDK_EXT_DIR)/intr_mgt.c $(DRV_SPDK_EXT_DIR)/ioworker.c $(wildcard $(DRV_COMMON_DIR)/*.c)
 
 CFLAGS += -I$(SPDK_ROOT_DIR)/include -I./driver/include
 
@@ -65,7 +65,7 @@ cython_lib:
 # sim and driver
 
 c_objs_clean:
-	@sudo rm -rf $(DRV_COMMON_DIR)/*.[od] $(DRV_COMMON_DIR)/*.[od] $(DRV_SPDK_EXT_DIR)/*.[od]
+	@sudo rm -rf $(DRV_COMMON_DIR)/*.[od] $(DRV_SPDK_EXT_DIR)/*.[od]
 
 .PHONY: all unittest clean cython_clean c_objs_clean
 
