@@ -19,21 +19,34 @@ def test_driver_common_reachability():
     src = b"test input"
     dst = b"Target area badbad"
     askFor = int(20)
-    count = int(len(src)) + 1
+    delta = 90
+    count = int(len(src))
+    dst_len = len(dst)
+
+    logging.info("test_driver_common_reachability: test STARTED =======================")
 
     logging.debug("Imported nvme driver-object")
     logging.debug(driverIntfObj)
 
     logging.info("Before first call [EQUAL TEST] - src %s, dst %s, count %u, asked for %u", src, dst, count, askFor)
     got = driverIntfObj.pen_common_connectivity_check(src, dst, count, askFor)
-    
+
     assert got == askFor
+    assert src == dst[0:count] # first n bytes of target must match with src
+    assert src == b"test input" # src should not change
+    assert dst[count:dst_len] == b'a badbad'
 
-    logging.debug("Second call returned %u", got)
+    logging.debug("First call returned %d, src %s, dst %s", got, src, dst)
 
-    logging.info("Before second call [MISMATCH TEST] - src %s, dst %s, count 0, asked for %u, will compare against %u", src, dst, askFor + 90, askFor)
-    got = driverIntfObj.pen_common_connectivity_check(src, dst, 0, askFor + 90)
+    dst = b"CLEARCLEAR"
 
-    logging.debug("Second call returned %d", got)
+    logging.info("Before second call [MISMATCH TEST] - src %s, dst %s, count 0, asked for %u, will compare against %u", src, dst, askFor + delta, askFor)
+    got = driverIntfObj.pen_common_connectivity_check(src, dst, 0, askFor + delta)
 
-    assert got != askFor
+    logging.debug("Second call returned %d, src %s, target %s", got, src, dst)
+
+    assert got == askFor + delta
+    assert src == b"test input"
+    assert dst == b"CLEARCLEAR"
+
+    logging.info("test_driver_common_reachability: test completed SUCCESSFULLY =======================")
