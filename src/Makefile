@@ -35,26 +35,43 @@
 SPDK_ROOT_DIR := $(abspath $(CURDIR)/../spdk)
 include $(SPDK_ROOT_DIR)/mk/spdk.common.mk
 
-C_SRCS = driver.c intr_mgt.c ioworker.c
+DRIVER_SRC_DIR = ./driver
+
+DRV_SPDK_EXT_DIR = $(DRIVER_SRC_DIR)/spdk-extensions
+DRV_SIM_DIR = $(DRIVER_SRC_DIR)/sim
+DRV_COMMON_DIR = $(DRIVER_SRC_DIR)/common
+DRV_CYTHON_DIR = $(DRIVER_SRC_DIR)/cython
+
+SPDK_EXT_SRCS = $(DRV_SPDK_EXT_DIR)/driver.c $(DRV_SPDK_EXT_DIR)/intr_mgt.c $(DRV_SPDK_EXT_DIR)/ioworker.c  $(wildcard $(DRV_SIM_DIR)/*.c) $(wildcard $(DRV_COMMON_DIR)/*.c)
+
+CFLAGS += -I$(SPDK_ROOT_DIR)/include -I./driver/include
+
+C_SRCS = $(SPDK_EXT_SRCS)
 LIBNAME = pynvme
 
 include $(SPDK_ROOT_DIR)/mk/spdk.lib.mk
 
 #cython part
-clean: cython_clean
-cython_clean:
-	@sudo rm -rf build *.o nvme.*.so cdriver.c driver_wrap.c unittest
+clean: cython_clean c_objs_clean
 
-.PHONY: all unittest
+cython_clean:
+	@sudo rm -rf build $(DRV_CYTHON_DIR)/*.o nvme.*.so cdriver.c $(DRV_CYTHON_DIR)/driver_wrap.c unittest
+
+c_objs_clean:
+	@sudo rm -rf $(DRV_COMMON_DIR)/*.[od] $(DRV_COMMON_DIR)/*.[od] $(DRV_SPDK_EXT_DIR)/*.[od]
+
+.PHONY: all unittest clean cython_clean c_objs_clean
+
+
 
 all: cython_lib
 cython_lib:
 	@python3 setup.py build_ext -i --force
 
 #unit test
-UT_SRCS = $(wildcard *_ut.c)
+UT_SRCS = $(wildcard $(DRV_SPDK_EXT_DIR)/*_ut.c)
 
 unittest: $(UT_SRCS)
-	gcc -o $@ $^ -lcunit -I../spdk/include -I../spdk/test -I.
+	gcc -o $@ $^ -lcunit -I../spdk/include -I../spdk/test -I./driver/include
 	./$@
 
