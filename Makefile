@@ -44,7 +44,8 @@ TESTS := driver_test.py
 
 all: clean
 	cd src; make
-	mv src/nvme.*.so nvme.so
+	mv src/nvme.cpython-*.so nvme.so
+	mv src/nvme_sim.cpython-*.so nvme_sim.so
 
 clean:
 	cd src; make clean

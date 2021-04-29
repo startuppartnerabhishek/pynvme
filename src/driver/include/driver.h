@@ -31,6 +31,8 @@
  *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __DRIVER_H__
+#define __DRIVER_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -272,3 +274,5 @@ extern uint32_t timeval_to_us(struct timeval* t);
 
 extern int pen_common_connectivity_check(char *src, char *dst, unsigned int count, int return_this);
 extern int pen_sim_connectivity_check(char *src, char *dst, unsigned int count, int return_this);
+
+#endif

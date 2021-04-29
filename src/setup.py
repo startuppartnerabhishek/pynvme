@@ -30,50 +30,52 @@
 #  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
 
+ext_module_list = [
+            Extension(
+                "nvme",
+
+                ["./driver/cython/driver_wrap.pyx"],
+
+                # include paths
+                include_dirs = ['../spdk/include', './driver/include'],
+
+                # dpdk prebuilt static libraries
+                libraries=['uuid', 'numa', 'pthread'],
+
+                # spdk static libraries
+                extra_objects=[
+                    # spdk
+                    '../spdk/build/lib/libspdk_pynvme.a',
+                    '../spdk/build/lib/libspdk_nvme.a',
+                    '../spdk/build/lib/libspdk_env_dpdk.a',
+                    '../spdk/build/lib/libspdk_util.a',
+                    '../spdk/build/lib/libspdk_sock.a',
+                    '../spdk/build/lib/libspdk_rpc.a',
+                    '../spdk/build/lib/libspdk_log.a',
+
+                    # force link symbols in these libraries
+                    '-Wl,--whole-archive',
+                    '../spdk/build/lib/libspdk_json.a',
+                    '../spdk/build/lib/libspdk_jsonrpc.a',
+                    '../spdk/build/lib/libspdk_sock_posix.a',
+                    '-Wl,--no-whole-archive',
+
+                    # dpdk
+                    '../spdk/dpdk/build/lib/librte_eal.a',
+                    '../spdk/dpdk/build/lib/librte_mbuf.a',
+                    '../spdk/dpdk/build/lib/librte_ring.a',
+                    '../spdk/dpdk/build/lib/librte_mempool.a',
+                    '../spdk/dpdk/build/lib/librte_bus_pci.a',
+                    '../spdk/dpdk/build/lib/librte_pci.a',
+                    '../spdk/dpdk/build/lib/librte_kvargs.a',
+                ],
+            )
+]
+
 setup(
-    ext_modules=cythonize(
-        [Extension(
-            "nvme",
-            ["./driver/cython/driver_wrap.pyx"],
-
-            # include paths
-            include_dirs = ['../spdk/include', './driver/include'],
-
-            # dpdk prebuilt static libraries
-            libraries=['uuid', 'numa', 'pthread'],
-
-            # spdk static libraries
-            extra_objects=[
-                # spdk
-                '../spdk/build/lib/libspdk_pynvme.a',
-                '../spdk/build/lib/libspdk_nvme.a',
-                '../spdk/build/lib/libspdk_env_dpdk.a',
-                '../spdk/build/lib/libspdk_util.a',
-                '../spdk/build/lib/libspdk_sock.a',
-                '../spdk/build/lib/libspdk_rpc.a',
-                '../spdk/build/lib/libspdk_log.a',
-
-                # force link symbols in these libraries
-                '-Wl,--whole-archive',
-                '../spdk/build/lib/libspdk_json.a',
-                '../spdk/build/lib/libspdk_jsonrpc.a',
-                '../spdk/build/lib/libspdk_sock_posix.a',
-                '-Wl,--no-whole-archive',
-
-                # dpdk
-                '../spdk/dpdk/build/lib/librte_eal.a',
-                '../spdk/dpdk/build/lib/librte_mbuf.a',
-                '../spdk/dpdk/build/lib/librte_ring.a',
-                '../spdk/dpdk/build/lib/librte_mempool.a',
-                '../spdk/dpdk/build/lib/librte_bus_pci.a',
-                '../spdk/dpdk/build/lib/librte_pci.a',
-                '../spdk/dpdk/build/lib/librte_kvargs.a',
-            ],
-        )]
-    )
+    ext_modules = cythonize(ext_module_list)
 )
