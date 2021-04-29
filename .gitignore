@@ -20,3 +20,5 @@ gdbcmds
 env
 spdk
 logs/
+generated
+cscope.out

@@ -39,10 +39,10 @@ setup(
     ext_modules=cythonize(
         [Extension(
             "nvme",
-            ["driver_wrap.pyx"],
+            ["./driver/cython/driver_wrap.pyx"],
 
             # include paths
-            include_dirs = ['../spdk/include'],
+            include_dirs = ['../spdk/include', './driver/include'],
 
             # dpdk prebuilt static libraries
             libraries=['uuid', 'numa', 'pthread'],
