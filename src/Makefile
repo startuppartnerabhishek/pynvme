@@ -51,22 +51,25 @@ LIBNAME = pynvme
 
 include $(SPDK_ROOT_DIR)/mk/spdk.lib.mk
 
+$(info driver/src build ---- source files are $(SPDK_EXT_SRCS))
+
 #cython part
 clean: cython_clean c_objs_clean
 
 cython_clean:
 	@sudo rm -rf build $(DRV_CYTHON_DIR)/*.o nvme.*.so cdriver.c $(DRV_CYTHON_DIR)/driver_wrap.c unittest
 
+cython_lib:
+	@python3 setup.py build_ext -i --force
+
+# sim and driver
+
 c_objs_clean:
 	@sudo rm -rf $(DRV_COMMON_DIR)/*.[od] $(DRV_COMMON_DIR)/*.[od] $(DRV_SPDK_EXT_DIR)/*.[od]
 
 .PHONY: all unittest clean cython_clean c_objs_clean
 
-
-
 all: cython_lib
-cython_lib:
-	@python3 setup.py build_ext -i --force
 
 #unit test
 UT_SRCS = $(wildcard $(DRV_SPDK_EXT_DIR)/*_ut.c)
