@@ -150,6 +150,33 @@ typedef struct crc_table_t
   uint32_t data[0];
 } crc_table_t;
 
+struct cmd_log_entry_t {
+  // cmd and cpl
+  struct spdk_nvme_cmd cmd;
+  struct timeval time_cmd;
+  struct spdk_nvme_cpl cpl;
+  uint32_t cpl_latency_us;
+  bool overlap_allocated;
+
+  // for data verification after read
+  void* buf;
+
+  // callback to user cb functions
+  struct nvme_request* req;
+  void* cb_arg;
+};
+
+struct cmd_log_table_t {
+  struct cmd_log_entry_t table[CMD_LOG_DEPTH];
+  uint32_t head_index;
+  uint32_t tail_index;
+  uint32_t latest_latency_us;
+  uint16_t latest_cid;
+  uint16_t intr_vec;
+  uint16_t intr_enabled;
+  uint16_t dummy[53];
+};
+
 extern int ioworker_entry(namespace* ns,
                           struct spdk_nvme_qpair *qpair,
                           ioworker_args* args,

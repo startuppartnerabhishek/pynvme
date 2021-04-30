@@ -12,10 +12,13 @@ set(SPDK_INCLUDE_DIR ../spdk/include)
 set(ALL_SRC
     ${SIM_DIR}/driver_sim.c
     ${SIM_DIR}/intr_mgt_sim.c
-    
+    ${SIM_DIR}/ioworker_sim.c
+
     ${COMMON_DIR}/driver_common.c
 )
 
 include_directories(${DRV_INCLUDE_DIR} ${SPDK_INCLUDE_DIR})
+
+set(CMAKE_C_FLAGS "-fPIC")
 
 add_library(drvsim STATIC ${ALL_SRC})
