@@ -22,7 +22,7 @@ int qpair_free(struct spdk_nvme_qpair* q)
 int nvme_set_ns(struct spdk_nvme_ctrlr *ctrlr)
 {
   assert(ctrlr != NULL);
-  DRVSIM_LOG("%s: not implemented\n", __FUNCTION__);
+  DRVSIM_NOT_IMPLEMENTED("%s: not implemented\n", __FUNCTION__);
   return DRVSIM_RETCODE_FAILURE;
 }
 
@@ -40,7 +40,7 @@ int nvme_send_cmd_raw(struct spdk_nvme_ctrlr* ctrlr,
                       spdk_nvme_cmd_cb cb_fn,
                       void* cb_arg)
 {
-  DRVSIM_LOG("%s: not implemented\n", __FUNCTION__);
+  DRVSIM_NOT_IMPLEMENTED("%s: not implemented\n", __FUNCTION__);
   return DRVSIM_RETCODE_FAILURE;
 }
 
@@ -48,25 +48,33 @@ struct spdk_nvme_ns* ns_init(struct spdk_nvme_ctrlr* ctrlr,
                              uint32_t nsid,
                              uint64_t nlba_verify)
 {
-  DRVSIM_LOG("%s: not implemented\n", __FUNCTION__);
+  DRVSIM_NOT_IMPLEMENTED("%s: not implemented\n", __FUNCTION__);
   return NULL;
 }
 
 void log_cmd_dump_admin(struct spdk_nvme_ctrlr* ctrlr, size_t count)
 {
   // TODO/TBD
-  DRVSIM_LOG("%s: not implemented\n", __FUNCTION__);
+  DRVSIM_TBD("%s: not implemented\n", __FUNCTION__);
   return;
 }
 
 void nvme_bar_remap(struct spdk_nvme_ctrlr* ctrlr)
 {
-  DRVSIM_LOG("%s: not implemented\n", __FUNCTION__);
+  DRVSIM_NOT_IMPLEMENTED("%s: not implemented\n", __FUNCTION__);
   return;
 }
 
 void nvme_bar_recover(struct spdk_nvme_ctrlr* ctrlr)
 {
-  DRVSIM_LOG("%s: not implemented\n", __FUNCTION__);
+  DRVSIM_NOT_IMPLEMENTED("%s: not implemented\n", __FUNCTION__);
   return;
+}
+
+int nvme_get_reg32(struct spdk_nvme_ctrlr* ctrlr,
+                   unsigned int offset,
+                   unsigned int* value)
+{
+    DRVSIM_NOT_IMPLEMENTED("%s: not implemented\n", __FUNCTION__);
+    return DRVSIM_RETCODE_FAILURE;
 }

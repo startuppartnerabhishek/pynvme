@@ -18,7 +18,7 @@
     "workbench.panel.defaultLocation": "right",
     "terminal.integrated.fontFamily": "monospace",
     "terminal.integrated.shell.linux": "/bin/bash",
-    "editor.minimap.enabled": false,
+    "editor.minimap.enabled": true,
     "editor.detectIndentation": false,
     "terminal.integrated.fontSize": 12
 }
