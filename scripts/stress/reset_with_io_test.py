@@ -37,7 +37,7 @@ import time
 import pytest
 import logging
 
-import nvme as d
+from conftest import globalNvmeModule as d
 
 
 def test_precondition_format(pcie, nvme0, nvme0n1, subsystem):

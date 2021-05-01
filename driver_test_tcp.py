@@ -39,7 +39,7 @@ import pytest
 import logging
 import warnings
 
-import nvme as d
+from conftest import globalNvmeModule as d
 
 
 @pytest.fixture(scope="function")

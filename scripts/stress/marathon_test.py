@@ -37,7 +37,7 @@ import time
 import pytest
 import logging
 
-import nvme as d
+from conftest import globalNvmeModule as d
 
 
 TEST_LOOPS = 3  # 3000

@@ -37,7 +37,7 @@ import pytest
 import logging
 import zipfile
 
-import nvme as d
+from conftest import globalNvmeModule as d
 
 import PySimpleGUI as sg
 

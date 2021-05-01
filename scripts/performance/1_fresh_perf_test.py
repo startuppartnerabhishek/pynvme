@@ -35,7 +35,7 @@
 
 import time
 import pytest
-import nvme as d
+from conftest import globalNvmeModule as d
 
 import logging
 

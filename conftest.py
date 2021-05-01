@@ -38,15 +38,50 @@ import pytest
 import random
 import logging
 import inspect
+import importlib
 
-import nvme as d
-
+# defer this binding
+# import nvme as d
+d=None
+globalTestOptions = None
+globalNvmeModule = None
 
 def pytest_addoption(parser):
     parser.addoption(
         "--pciaddr", action="store", default="", help="pci (BDF) address of the device under test, e.g.: 02:00.0"
     )
+    parser.addoption(
+        "--deviceMode", action="store", default="SIM", help="choose test device mode - run against PCIE or SIM (simulation)"
+    )
+    parser.addoption(
+        "--conf", action="store", default="", help="environment configuration"
+    )
 
+def pytest_configure(config):
+    global globalTestOptions
+    global d
+    global globalNvmeModule
+    deviceMode = config.getoption("--deviceMode")
+    conf = config.getoption("--conf")
+    driverModule = "nvme_sim"
+    
+    if deviceMode == "PCIE":
+        logging.info("Switching to PCIE mode")
+        deviceMode = "PCIE"
+        driverModule = "nvme"
+
+    globalTestOptions = {
+        "mode": deviceMode,
+        "conf": conf,
+        "driverModule": driverModule
+    }
+
+    logging.info("pytest_configure: loading nvme module %s" % globalTestOptions["driverModule"])
+    d = importlib.import_module(globalTestOptions["driverModule"])
+    globalNvmeModule = d
+
+    logging.info("Global Config from conftest")
+    logging.info(globalTestOptions)
 
 @pytest.fixture(scope="function", autouse=True)
 def script(request):
@@ -135,3 +170,4 @@ def pytest_runtest_makereport(item, call):
     # set a report attribute for each phase of a call, which can
     # be "setup", "call", "teardown"
     setattr(item, "rep_" + rep.when, rep)
+
