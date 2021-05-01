@@ -1,7 +1,7 @@
 import logging
 import pytest
 
-import nvme as driverIntfObj
+from conftest import globalNvmeModule as driverIntfObj
 
 def test_py_invocation():
     print("Your test was SUCCESSFULLY invoked. Congratulations!")

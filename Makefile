@@ -106,7 +106,7 @@ tags:
 	ctags -e --c-kinds=+l -R --exclude=.git --exclude=ioat --exclude=snippets --exclude=env --exclude=doc
 
 pytest: info
-	sudo python3 -B -m pytest $(TESTS) --pciaddr=${pciaddr} -s -v -r Efsx --excelreport=report.xls --verbose
+	sudo python3 -B -m pytest $(TESTS) --pciaddr=${pciaddr} --deviceMode=PCIE -s -v -r Efsx --excelreport=report.xls --verbose
 
 test:
 	- rm test_${pciaddr}.log
@@ -127,7 +127,7 @@ sim_info:
 	- echo TEST_SET = ${TESTS}
 
 pytest_sim: sim_info
-	python3 -B -m pytest $(TESTS) -s -v -r Efsx --excelreport=${REPORTFILE} --verbose
+	python3 -B -m pytest $(TESTS) --deviceMode=SIM -s -v -r Efsx --excelreport=${REPORTFILE} --verbose
 
 sim_test:
 	make pytest_sim 2>${LOGFILE} | tee -a ${LOGFILE}

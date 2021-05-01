@@ -36,7 +36,7 @@
 import pytest
 import zipfile
 import logging
-import nvme as d
+from conftest import globalNvmeModule as d
 
 
 def test_ioworker_jedec_enterprise_workload_512(nvme0n1):

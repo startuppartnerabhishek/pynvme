@@ -36,7 +36,7 @@
 import time
 import pytest
 import logging
-import nvme as d
+from conftest import globalNvmeModule as d
 
 
 def test_trim_basic(nvme0: d.Controller, nvme0n1, verify, qpair):
