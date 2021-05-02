@@ -46,6 +46,10 @@ all: clean
 	cd src; make
 	mv src/nvme.cpython-*.so nvme.so
 	mv src/nvme_sim.cpython-*.so nvme_sim.so
+	@printf "\nBuild complete\n\n"
+	@printf "++++ Build check - listing python module init symbols in shared libraries +++++\n\n"
+	@nm -A *.so | grep -i pyinit
+	@echo
 
 clean:
 	cd src; make clean
