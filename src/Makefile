@@ -58,7 +58,7 @@ clean: cython_clean c_objs_clean sim_clean
 
 #cython part
 cython_clean_generated_common_src:
-	echo TGT=cython_clean_generated_common_src cleaning $(DRV_CYTHON_DIR)/*.[od] $(DRV_CYTHON_DIR)/driver_wrap.c
+	@echo +++++ TGT=cython_clean_generated_common_src cleaning $(DRV_CYTHON_DIR)/*.[od] $(DRV_CYTHON_DIR)/driver_wrap.c +++++
 	sudo rm -rf $(DRV_CYTHON_DIR)/*.[od] $(DRV_CYTHON_DIR)/driver_wrap.c
 
 cython_clean: cython_clean_generated_common_src
@@ -68,7 +68,7 @@ cython_lib:
 	mkdir -p $(CYTHON_PY_PACKAGE_DIR)/nvme
 	python3 setup.py build_ext -i --build-temp=$(CYTHON_PY_PACKAGE_DIR)/nvme --force
 
-cython_sim_lib:
+cython_sim_lib: sim
 	mkdir -p $(CYTHON_PY_PACKAGE_DIR)/nvme_sim
 	python3 setup_sim.py build_ext -i --build-temp=$(CYTHON_PY_PACKAGE_DIR)/nvme_sim --force
 
@@ -79,7 +79,7 @@ c_objs_clean:
 
 # sim
 sim:
-	echo building drv_sim src files
+	@echo ++++++ building drv_sim src files ++++++
 	make -C build
 
 sim_clean:
@@ -90,20 +90,17 @@ sim_install:
 	cd build; cmake ../; cd -
 
 all_stage_1: cython_lib
-	@echo completed build stage 1 for TGT=$@ depending on DEP=$^
+	@echo +++++ completed build stage 1 for TGT=$@ depending on DEP=$^ +++++
 
 # Clean out the common generated objects/src with clashing names from sim build.
 # cythonize and distutils fail to clean them.
 all_stage_2: all_stage_1 cython_clean_generated_common_src
-	@echo completed build stage 2 for TGT=$@ depending on DEP=$^
+	@echo +++++++ completed build stage 2 for TGT=$@ depending on DEP=$^ +++++++
 
-all_stage_3: all_stage_2 sim
-	@echo completed build stage 3 for TGT=$@ depending on DEP=$^
+all_stage_3: all_stage_2 cython_sim_lib
+	@echo ++++++ completed build stage 4 for TGT=$@ depending on DEP=$^ ++++++
 
-all_stage_4: all_stage_3 cython_sim_lib
-	@echo completed build stage 4 for TGT=$@ depending on DEP=$^
-
-all: all_stage_4
+all: all_stage_3
 
 #unit test
 UT_SRCS = $(wildcard $(DRV_SPDK_EXT_DIR)/*_ut.c)
