@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION  3.16.3)
 
 project(pyNvmeDrvSim)
 
+# make outputs verbose
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
 set(DRIVER_SRC_BASE ./driver)
 
 set(SIM_DIR ${DRIVER_SRC_BASE}/sim)
@@ -19,6 +22,6 @@ set(ALL_SRC
 
 include_directories(${DRV_INCLUDE_DIR} ${SPDK_INCLUDE_DIR})
 
-set(CMAKE_C_FLAGS "-fPIC")
+set(CMAKE_C_FLAGS "-fPIC -DSIM_MODE")
 
 add_library(drvsim STATIC ${ALL_SRC})
