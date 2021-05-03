@@ -8,13 +8,15 @@ NC='\033[0m' # No Color
 YELLOW='\033[0;33m'
 LOGDIR=./logs
 LOGFILE_NAME_TIMESTAMP_FORMAT='+%Y:%m:%d-%R:%S'
+CONF_DIR=./conf
+CONF_FILE=${CONF_DIR}/simconf.json
 
-if [ "$#" -ne 1 ];
+if [ "$#" -ne 1 ] && [ "$#" -ne 2 ];
 then
     echo -e "$0: ${RED}invalid arguments ${NC}">&2
     echo >&2
     echo Usage is >&2
-    echo $0 \"script_file::script_function\" >&2
+    echo $0 \"script_file::script_function\" [JSON_CONF_FILE] >&2
     echo >&2
     echo -e "${YELLOW}EXAMPLE (try it from the pynvme base directory):${NC}" >&2
     echo -e "${LIGHT_GREEN}$0 scripts/pensando/platform-sanity/connectivity_test.py::test_py_invocation${NC}" >&2
@@ -37,4 +39,4 @@ BASE_COMMAND='make sim_test'
 
 # set -x
 
-$BASE_COMMAND TESTS=\"$1\" LOGFILE=${LOGFILE} REPORTFILE=${REPORTFILE}
+$BASE_COMMAND TESTS=\"$1\" LOGFILE=${LOGFILE} CONF_FILE=${CONF_FILE} REPORTFILE=${REPORTFILE}

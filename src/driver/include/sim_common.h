@@ -7,13 +7,15 @@
 
 #define DRVSIM_LOG(_FMT_, ...) printf("%s:%u %s(): "_FMT_, __SHORTED_FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 
-#define DRVSIM_NOT_IMPLEMENTED(_FMT_, ...)  \
+#define DRVSIM_FATAL_ERROR(_FMT_, ...)  \
 do {                                        \
-    DRVSIM_LOG(_FMT_, ##__VA_ARGS__);     \
+    DRVSIM_LOG(_FMT_, ##__VA_ARGS__);       \
     fflush(stdout);                         \
     fflush(stderr);                         \
     assert(false);                          \
 } while (0)
+
+#define DRVSIM_NOT_IMPLEMENTED(_FMT_, ...) DRVSIM_FATAL_ERROR(_FMT_, ##__VA_ARGS__)
 
 #define DRVSIM_TBD(_FMT_, ...)                          \
 do {                                                    \

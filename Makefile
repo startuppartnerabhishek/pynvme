@@ -131,7 +131,7 @@ sim_info:
 	- echo TEST_SET = ${TESTS}
 
 pytest_sim: sim_info
-	python3 -B -m pytest $(TESTS) --deviceMode=SIM -s -v -r Efsx --excelreport=${REPORTFILE} --verbose
+	python3 -B -m pytest $(TESTS) --deviceMode=SIM --conf=$(CONF_FILE) -s -v -r Efsx --excelreport=${REPORTFILE} --verbose
 
 sim_test:
 	make pytest_sim 2>${LOGFILE} | tee -a ${LOGFILE}
