@@ -9,8 +9,8 @@
 #define MAX_STRING_LEN  1024
 
 typedef struct sim_config_s {
-#define CONFIG_KEYNAME_ROOT_PATH    "rootpath"
-    char root_path[MAX_STRING_LEN];
+#define CONFIG_KEYNAME_AGENT_RUNTIME_ROOT_PATH    "agent_runtime_rootpath"
+    char agent_runtime_rootpath[MAX_STRING_LEN];
 } sim_config_t;
 
 struct spdk_log_flag SPDK_LOG_NVME = {
@@ -235,21 +235,24 @@ int nvme_fini(ctrlr_t* ctrlr)
 static void init_sim_config(char *json_string)
 {
     cJSON *conf = cJSON_Parse(json_string);
-    cJSON *root_path;
+    cJSON *agent_runtime_rootpath;
 
     if (NULL == conf) {
         DRVSIM_FATAL_ERROR("Invalid json-config %s\n", json_string);
         return;
     }
 
-    root_path = cJSON_GetObjectItemCaseSensitive(conf, CONFIG_KEYNAME_ROOT_PATH);
+    agent_runtime_rootpath = cJSON_GetObjectItemCaseSensitive(conf, CONFIG_KEYNAME_AGENT_RUNTIME_ROOT_PATH);
 
-    if (NULL != root_path && cJSON_IsString(root_path) && NULL != root_path->valuestring) {
-        strcpy(g_sim_config.root_path, root_path->valuestring);
-        DRVSIM_LOG("[JSON-CFG] %s -> %s\n", CONFIG_KEYNAME_ROOT_PATH, g_sim_config.root_path);
+    if (NULL != agent_runtime_rootpath &&
+            cJSON_IsString(agent_runtime_rootpath) &&
+            NULL != agent_runtime_rootpath->valuestring) {
+        strcpy(g_sim_config.agent_runtime_rootpath, agent_runtime_rootpath->valuestring);
+        DRVSIM_LOG("[JSON-CFG] %s -> %s\n", CONFIG_KEYNAME_AGENT_RUNTIME_ROOT_PATH,
+            g_sim_config.agent_runtime_rootpath);
     }
     else {
-        DRVSIM_LOG("[JSON-CFG] %s NOT FOUND\n", CONFIG_KEYNAME_ROOT_PATH);
+        DRVSIM_LOG("[JSON-CFG] %s NOT FOUND\n", CONFIG_KEYNAME_AGENT_RUNTIME_ROOT_PATH);
     }
 
     cJSON_Delete(conf);
