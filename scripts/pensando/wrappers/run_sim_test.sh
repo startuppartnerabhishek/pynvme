@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# example scripts/pensando/wrappers/run_sim_test.sh scripts/pensando/platform-sanity/connectivity_test.py::test_driver_common_reachability
+
 RED='\033[0;31m'
 LIGHT_GREEN='\033[0;32m'
 NC='\033[0m' # No Color
