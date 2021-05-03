@@ -182,38 +182,6 @@ int qpair_get_id(struct spdk_nvme_qpair* q)
   return q ? q->id : 0;
 }
 
-uint16_t qpair_get_latest_cid(struct spdk_nvme_qpair* q,
-                              struct spdk_nvme_ctrlr* c)
-{
-  struct cmd_log_table_t* log_table;
-
-  if (q == NULL)
-  {
-    q = c->adminq;
-  }
-
-  assert(q != NULL);
-  assert(q->ctrlr == c);
-  log_table = q->pynvme_cmdlog;
-  return log_table->latest_cid;
-}
-
-uint32_t qpair_get_latest_latency(struct spdk_nvme_qpair* q,
-                                  struct spdk_nvme_ctrlr* c)
-{
-  struct cmd_log_table_t* log_table;
-
-  if (q == NULL)
-  {
-    q = c->adminq;
-  }
-
-  assert(q != NULL);
-  assert(q->ctrlr == c);
-  log_table = q->pynvme_cmdlog;
-  return log_table->latest_latency_us;
-}
-
 bool ns_verify_enable(struct spdk_nvme_ns* ns, bool enable)
 {
   crc_table_t* crc_table = (crc_table_t*)ns->crc_table;

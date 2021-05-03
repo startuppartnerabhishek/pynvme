@@ -79,7 +79,7 @@ __version__ = "2.3.2"
 # drive times out earlier than driver timeout
 _cTIMEOUT = 10
 _timeout_happened = False
-cdef void timeout_driver_cb(void* cb_arg, d.ctrlr* ctrlr,
+cdef void timeout_driver_cb(void* cb_arg, d.ctrlr_t* ctrlr,
                             d.qpair * qpair, unsigned short cid):
     _timeout_happened = True
     error_string = "drive timeout: qpair: %d, cid: %d" % \
@@ -536,7 +536,7 @@ cdef class Pcie(object):
         addr (str): BDF address of PCIe device
     """
 
-    cdef d.ctrlr * _ctrlr
+    cdef d.ctrlr_t * _ctrlr
     cdef char _bdf[64]
     cdef char _vdid[64]
     cdef bint _backup

@@ -515,7 +515,7 @@ void crc32_unlock_lba(struct nvme_request* req)
 }
 
 
-void crc32_unlock_all(struct spdk_nvme_ctrlr* ctrlr)
+void crc32_unlock_all(ctrlr_t * ctrlr)
 {
   for (uint32_t nsid = 1; nsid <= ctrlr->num_ns; nsid++)
   {
@@ -588,7 +588,7 @@ void cmdlog_free(struct spdk_nvme_qpair* q)
 
 
 static void cmdlog_update_crc_admin(struct spdk_nvme_cmd* cmd,
-                                    struct spdk_nvme_ctrlr* ctrlr)
+                                    ctrlr_t * ctrlr)
 {
   if (cmd->opc == 0x80)
   {
@@ -653,7 +653,7 @@ static void cmdlog_update_crc_io(struct spdk_nvme_cmd* cmd,
 static void cmdlog_update_crc(struct cmd_log_entry_t* log_entry)
 {
   struct spdk_nvme_cmd* cmd = &log_entry->cmd;
-  struct spdk_nvme_ctrlr* ctrlr = log_entry->req->qpair->ctrlr;
+  ctrlr_t * ctrlr = log_entry->req->qpair->ctrlr;
 
   // admin queue
   if (log_entry->req->qpair->id == 0)
@@ -675,7 +675,7 @@ static int cmdlog_verify_crc(struct cmd_log_entry_t* log_entry)
 {
   int ret = 0;
   struct spdk_nvme_cmd* cmd = &log_entry->cmd;
-  struct spdk_nvme_ctrlr* ctrlr = log_entry->req->qpair->ctrlr;
+  ctrlr_t * ctrlr = log_entry->req->qpair->ctrlr;
 
   // read command
   if (log_entry->req->qpair->id != 0 && log_entry->cmd.opc == 2)
@@ -851,7 +851,7 @@ void cmdlog_add_cmd(struct spdk_nvme_qpair* qpair, struct nvme_request* req)
 
 struct cb_ctx {
   struct spdk_nvme_transport_id* trid;
-  struct spdk_nvme_ctrlr* ctrlr;
+  ctrlr_t * ctrlr;
 };
 
 static bool probe_cb(void *cb_ctx,
@@ -909,7 +909,7 @@ static void attach_cb(void *cb_ctx,
 ////module: pcie ctrlr
 ///////////////////////////////
 
-struct spdk_pci_device* pcie_init(struct spdk_nvme_ctrlr* ctrlr)
+struct spdk_pci_device* pcie_init(ctrlr_t * ctrlr)
 {
   assert(ctrlr->trid.trtype == SPDK_NVME_TRANSPORT_PCIE);
   return spdk_nvme_ctrlr_get_pci_device(ctrlr);
@@ -940,7 +940,7 @@ struct ctrlr_entry {
 
 STAILQ_HEAD(, ctrlr_entry) g_controllers = STAILQ_HEAD_INITIALIZER(g_controllers);
 
-static struct spdk_nvme_ctrlr* nvme_probe(char* traddr, unsigned int port)
+static ctrlr_t * nvme_probe(char* traddr, unsigned int port)
 {
   struct spdk_nvme_transport_id trid;
   struct cb_ctx cb_ctx;
@@ -979,9 +979,9 @@ static struct spdk_nvme_ctrlr* nvme_probe(char* traddr, unsigned int port)
   return cb_ctx.ctrlr;
 }
 
-struct spdk_nvme_ctrlr* nvme_init(char * traddr, unsigned int port)
+ctrlr_t* nvme_init(char * traddr, unsigned int port)
 {
-  struct spdk_nvme_ctrlr* ctrlr;
+  ctrlr_t * ctrlr;
 
   //enum the device
   ctrlr = nvme_probe(traddr, port);
@@ -1016,7 +1016,7 @@ struct spdk_nvme_ctrlr* nvme_init(char * traddr, unsigned int port)
   return ctrlr;
 }
 
-int nvme_fini(struct spdk_nvme_ctrlr* ctrlr)
+int nvme_fini(ctrlr_t* ctrlr)
 {
   assert(ctrlr != NULL);
   SPDK_DEBUGLOG(SPDK_LOG_NVME, "free ctrlr: %s\n", ctrlr->trid.traddr);
@@ -1047,39 +1047,39 @@ int nvme_fini(struct spdk_nvme_ctrlr* ctrlr)
   return spdk_nvme_detach(ctrlr);
 }
 
-void nvme_bar_recover(struct spdk_nvme_ctrlr* ctrlr)
+void nvme_bar_recover(ctrlr_t * ctrlr)
 {
   nvme_pcie_bar_remap_recover(ctrlr);
 }
 
-void nvme_bar_remap(struct spdk_nvme_ctrlr* ctrlr)
+void nvme_bar_remap(ctrlr_t * ctrlr)
 {
   int ret = nvme_pcie_bar_remap(ctrlr);
   assert(ret == 0);
 }
 
-int nvme_set_reg32(struct spdk_nvme_ctrlr* ctrlr,
+int nvme_set_reg32(ctrlr_t * ctrlr,
                    unsigned int offset,
                    unsigned int value)
 {
   return nvme_transport_ctrlr_set_reg_4(ctrlr, offset, value);
 }
 
-int nvme_get_reg32(struct spdk_nvme_ctrlr* ctrlr,
+int nvme_get_reg32(ctrlr_t * ctrlr,
                    unsigned int offset,
                    unsigned int* value)
 {
   return nvme_transport_ctrlr_get_reg_4(ctrlr, offset, value);
 }
 
-int nvme_set_reg64(struct spdk_nvme_ctrlr* ctrlr,
+int nvme_set_reg64(ctrlr_t * ctrlr,
                    unsigned int offset,
                    unsigned long value)
 {
   return nvme_transport_ctrlr_set_reg_8(ctrlr, offset, value);
 }
 
-int nvme_get_reg64(struct spdk_nvme_ctrlr* ctrlr,
+int nvme_get_reg64(ctrlr_t * ctrlr,
                    unsigned int offset,
                    unsigned long* value)
 {
@@ -1100,7 +1100,7 @@ int nvme_set_adminq(struct spdk_nvme_ctrlr *ctrlr)
 }
 
 
-int nvme_wait_completion_admin(struct spdk_nvme_ctrlr* ctrlr)
+int nvme_wait_completion_admin(ctrlr_t * ctrlr)
 {
   int32_t rc;
   intr_ctrl_t* intr_ctrl = ctrlr->pynvme_intc_ctrl;
@@ -1133,7 +1133,7 @@ int nvme_wait_completion_admin(struct spdk_nvme_ctrlr* ctrlr)
 }
 
 
-int nvme_send_cmd_raw(struct spdk_nvme_ctrlr* ctrlr,
+int nvme_send_cmd_raw(ctrlr_t * ctrlr,
                       struct spdk_nvme_qpair *qpair,
                       unsigned int cdw0,
                       unsigned int nsid,
@@ -1177,7 +1177,7 @@ int nvme_send_cmd_raw(struct spdk_nvme_ctrlr* ctrlr,
   return rc;
 }
 
-void nvme_register_timeout_cb(struct spdk_nvme_ctrlr* ctrlr,
+void nvme_register_timeout_cb(ctrlr_t * ctrlr,
                               spdk_nvme_timeout_cb timeout_cb,
                               unsigned int msec)
 {
@@ -1191,7 +1191,7 @@ int nvme_cpl_is_error(const struct spdk_nvme_cpl* cpl)
 }
 
 
-struct spdk_nvme_ns* nvme_get_ns(struct spdk_nvme_ctrlr* ctrlr,
+struct spdk_nvme_ns* nvme_get_ns(ctrlr_t * ctrlr,
                                  uint32_t nsid)
 {
   return spdk_nvme_ctrlr_get_ns(ctrlr, nsid);
@@ -1200,7 +1200,7 @@ struct spdk_nvme_ns* nvme_get_ns(struct spdk_nvme_ctrlr* ctrlr,
 ////module: qpair
 ///////////////////////////////
 
-struct spdk_nvme_qpair *qpair_create(struct spdk_nvme_ctrlr* ctrlr,
+struct spdk_nvme_qpair *qpair_create(ctrlr_t * ctrlr,
                                      unsigned int prio,
                                      unsigned int depth,
                                      bool ien,
@@ -1254,6 +1254,38 @@ int qpair_free(struct spdk_nvme_qpair* q)
   assert(q != NULL);
   SPDK_DEBUGLOG(SPDK_LOG_NVME, "free qpair: %d\n", q->id);
   return spdk_nvme_ctrlr_free_io_qpair(q);
+}
+
+uint16_t qpair_get_latest_cid(struct spdk_nvme_qpair* q,
+                              ctrlr_t* c)
+{
+  struct cmd_log_table_t* log_table;
+
+  if (q == NULL)
+  {
+    q = c->adminq;
+  }
+
+  assert(q != NULL);
+  assert(q->ctrlr == c);
+  log_table = q->pynvme_cmdlog;
+  return log_table->latest_cid;
+}
+
+uint32_t qpair_get_latest_latency(struct spdk_nvme_qpair* q,
+                                  ctrlr_t* c)
+{
+  struct cmd_log_table_t* log_table;
+
+  if (q == NULL)
+  {
+    q = c->adminq;
+  }
+
+  assert(q != NULL);
+  assert(q->ctrlr == c);
+  log_table = q->pynvme_cmdlog;
+  return log_table->latest_latency_us;
 }
 
 
@@ -1339,7 +1371,7 @@ static void ns_table_fini(struct spdk_nvme_ns* ns)
 }
 
 
-struct spdk_nvme_ns* ns_init(struct spdk_nvme_ctrlr* ctrlr,
+struct spdk_nvme_ns* ns_init(ctrlr_t * ctrlr,
                              uint32_t nsid,
                              uint64_t nlba_verify)
 {
@@ -1640,7 +1672,7 @@ void log_cmd_dump(struct spdk_nvme_qpair* qpair, size_t count)
   }
 }
 
-void log_cmd_dump_admin(struct spdk_nvme_ctrlr* ctrlr, size_t count)
+void log_cmd_dump_admin(ctrlr_t * ctrlr, size_t count)
 {
   log_cmd_dump(ctrlr->adminq, count);
 }
@@ -2015,17 +2047,17 @@ int driver_fini(void)
   return spdk_env_cleanup();
 }
 
-uint32_t driver_io_qpair_count(struct spdk_nvme_ctrlr* ctrlr)
+uint32_t driver_io_qpair_count(ctrlr_t * ctrlr)
 {
   return spdk_nvme_io_qpair_count(ctrlr);
 }
 
-bool driver_no_secondary(struct spdk_nvme_ctrlr* ctrlr)
+bool driver_no_secondary(ctrlr_t * ctrlr)
 {
   return spdk_nvme_secondary_process_nonexist(ctrlr);
 }
 
-void driver_init_num_queues(struct spdk_nvme_ctrlr* ctrlr, uint32_t cdw0)
+void driver_init_num_queues(ctrlr_t * ctrlr, uint32_t cdw0)
 {
   struct spdk_nvme_cpl cpl;
 
