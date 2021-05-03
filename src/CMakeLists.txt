@@ -22,6 +22,6 @@ set(ALL_SRC
 
 include_directories(${DRV_INCLUDE_DIR} ${SPDK_INCLUDE_DIR})
 
-set(CMAKE_C_FLAGS "-fPIC -DSIM_MODE")
+set(CMAKE_C_FLAGS "-fPIC -DSIM_MODE -Wall -Werror -g")
 
 add_library(drvsim STATIC ${ALL_SRC})
