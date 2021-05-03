@@ -4,11 +4,24 @@
 #include "sim_common.h"
 #include "../../../spdk/lib/nvme/nvme_internal.h"
 
+#include "cJSON.h"
+
+#define MAX_STRING_LEN  1024
+
+typedef struct sim_config_s {
+#define CONFIG_KEYNAME_ROOT_PATH    "rootpath"
+    char root_path[MAX_STRING_LEN];
+} sim_config_t;
 
 struct spdk_log_flag SPDK_LOG_NVME = {
   .name = "nvme",
   .enabled = false,
 };
+
+/*** global config *****/
+static sim_config_t g_sim_config;
+
+static void init_sim_config(char *json_string);
 
 ////module: qpair
 ///////////////////////////////
@@ -219,9 +232,35 @@ int nvme_fini(ctrlr_t* ctrlr)
     return DRVSIM_RETCODE_FAILURE;
 }
 
+static void init_sim_config(char *json_string)
+{
+    cJSON *conf = cJSON_Parse(json_string);
+    cJSON *root_path;
+
+    if (NULL == conf) {
+        DRVSIM_FATAL_ERROR("Invalid json-config %s\n", json_string);
+        return;
+    }
+
+    root_path = cJSON_GetObjectItemCaseSensitive(conf, CONFIG_KEYNAME_ROOT_PATH);
+
+    if (NULL != root_path && cJSON_IsString(root_path) && NULL != root_path->valuestring) {
+        strcpy(g_sim_config.root_path, root_path->valuestring);
+        DRVSIM_LOG("[JSON-CFG] %s -> %s\n", CONFIG_KEYNAME_ROOT_PATH, g_sim_config.root_path);
+    }
+    else {
+        DRVSIM_LOG("[JSON-CFG] %s NOT FOUND\n", CONFIG_KEYNAME_ROOT_PATH);
+    }
+
+    cJSON_Delete(conf);
+}
+
 ctrlr_t* nvme_init(char * traddr, unsigned int port)
 {
     DRVSIM_LOG("traddr %s, port %u\n", traddr, port);
+
+    init_sim_config(traddr);
+
     DRVSIM_NOT_IMPLEMENTED("not implemented\n");
     return NULL;
 }

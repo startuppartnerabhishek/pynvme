@@ -39,6 +39,7 @@ import random
 import logging
 import inspect
 import importlib
+import json
 
 # defer this binding
 # import nvme as d
@@ -61,6 +62,9 @@ def pytest_configure(config):
     global globalTestOptions
     global d
     global globalNvmeModule
+    sim_config = None
+    sim_config_as_string = None
+
     deviceMode = config.getoption("--deviceMode")
     conf = config.getoption("--conf")
     driverModule = "nvme_sim"
@@ -69,11 +73,20 @@ def pytest_configure(config):
         logging.info("Switching to PCIE mode")
         deviceMode = "PCIE"
         driverModule = "nvme"
+    else:
+        assert conf != None, "SIM could not find conf-file name"
+        with open(conf, "r") as f:
+            sim_config = json.load(f)
+
+        sim_config_as_string = json.dumps(sim_config)
+        assert sim_config_as_string != None, "SIM mode requires a json conf-file"
 
     globalTestOptions = {
         "mode": deviceMode,
         "conf": conf,
-        "driverModule": driverModule
+        "driverModule": driverModule,
+        "config_json": sim_config,
+        "config_as_string": sim_config_as_string
     }
 
     logging.info("pytest_configure: loading nvme module %s" % globalTestOptions["driverModule"])
@@ -99,8 +112,10 @@ def script(request):
 
 @pytest.fixture(scope="session")
 def pciaddr(request):
-    return request.config.getoption("--pciaddr")
-
+    if globalTestOptions["mode"] == "PCIE":
+        return request.config.getoption("--pciaddr")
+    else:
+        return globalTestOptions["config_as_string"]
 
 @pytest.fixture(scope="function")
 def pcie(pciaddr):
