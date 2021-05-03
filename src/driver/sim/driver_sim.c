@@ -13,7 +13,7 @@ struct spdk_log_flag SPDK_LOG_NVME = {
 ////module: qpair
 ///////////////////////////////
 
-struct spdk_nvme_qpair *qpair_create(struct spdk_nvme_ctrlr* ctrlr,
+struct spdk_nvme_qpair *qpair_create(ctrlr_t* ctrlr,
                                      unsigned int prio,
                                      unsigned int depth,
                                      bool ien,
@@ -36,21 +36,36 @@ int qpair_wait_completion(struct spdk_nvme_qpair *qpair, uint32_t max_completion
   return DRVSIM_RETCODE_FAILURE;
 }
 
-int nvme_set_ns(struct spdk_nvme_ctrlr *ctrlr)
+
+uint16_t qpair_get_latest_cid(struct spdk_nvme_qpair* q,
+                              ctrlr_t* c)
+{
+    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
+    return (uint16_t)DRVSIM_RETCODE_FAILURE; 
+}
+
+uint32_t qpair_get_latest_latency(struct spdk_nvme_qpair* q,
+                                  ctrlr_t* c)
+{
+    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
+    return DRVSIM_RETCODE_FAILURE;
+}
+
+int nvme_set_ns(ctrlr_t *ctrlr)
 {
   assert(ctrlr != NULL);
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return DRVSIM_RETCODE_FAILURE;
 }
 
-struct spdk_nvme_ns* nvme_get_ns(struct spdk_nvme_ctrlr* ctrlr,
+struct spdk_nvme_ns* nvme_get_ns(ctrlr_t* ctrlr,
                                  uint32_t nsid)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return NULL;
 }
 
-int nvme_set_reg32(struct spdk_nvme_ctrlr* ctrlr,
+int nvme_set_reg32(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned int value)
 {
@@ -58,7 +73,7 @@ int nvme_set_reg32(struct spdk_nvme_ctrlr* ctrlr,
   return DRVSIM_RETCODE_FAILURE;
 }
 
-int nvme_send_cmd_raw(struct spdk_nvme_ctrlr* ctrlr,
+int nvme_send_cmd_raw(ctrlr_t* ctrlr,
                       struct spdk_nvme_qpair *qpair,
                       unsigned int cdw0,
                       unsigned int nsid,
@@ -76,19 +91,19 @@ int nvme_send_cmd_raw(struct spdk_nvme_ctrlr* ctrlr,
   return DRVSIM_RETCODE_FAILURE;
 }
 
-int nvme_set_adminq(struct spdk_nvme_ctrlr *ctrlr)
+int nvme_set_adminq(ctrlr_t *ctrlr)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return DRVSIM_RETCODE_FAILURE;
 }
 
-int nvme_wait_completion_admin(struct spdk_nvme_ctrlr* ctrlr)
+int nvme_wait_completion_admin(ctrlr_t* ctrlr)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return DRVSIM_RETCODE_FAILURE;
 }
 
-void nvme_register_timeout_cb(struct spdk_nvme_ctrlr* ctrlr,
+void nvme_register_timeout_cb(ctrlr_t* ctrlr,
                               spdk_nvme_timeout_cb timeout_cb,
                               unsigned int msec)
 {
@@ -96,7 +111,7 @@ void nvme_register_timeout_cb(struct spdk_nvme_ctrlr* ctrlr,
   return;
 }
 
-struct spdk_nvme_ns* ns_init(struct spdk_nvme_ctrlr* ctrlr,
+struct spdk_nvme_ns* ns_init(ctrlr_t* ctrlr,
                              uint32_t nsid,
                              uint64_t nlba_verify)
 {
@@ -105,7 +120,7 @@ struct spdk_nvme_ns* ns_init(struct spdk_nvme_ctrlr* ctrlr,
 }
 
 int ns_refresh(struct spdk_nvme_ns *ns, uint32_t id,
-               struct spdk_nvme_ctrlr *ctrlr)
+               ctrlr_t *ctrlr)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return DRVSIM_RETCODE_FAILURE;
@@ -157,26 +172,26 @@ void log_cmd_dump(struct spdk_nvme_qpair* qpair, size_t count)
   return;
 }
 
-void log_cmd_dump_admin(struct spdk_nvme_ctrlr* ctrlr, size_t count)
+void log_cmd_dump_admin(ctrlr_t* ctrlr, size_t count)
 {
   // TODO/TBD
   DRVSIM_TBD("not implemented\n");
   return;
 }
 
-void nvme_bar_remap(struct spdk_nvme_ctrlr* ctrlr)
+void nvme_bar_remap(ctrlr_t* ctrlr)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return;
 }
 
-void nvme_bar_recover(struct spdk_nvme_ctrlr* ctrlr)
+void nvme_bar_recover(ctrlr_t* ctrlr)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return;
 }
 
-int nvme_get_reg32(struct spdk_nvme_ctrlr* ctrlr,
+int nvme_get_reg32(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned int* value)
 {
@@ -184,7 +199,7 @@ int nvme_get_reg32(struct spdk_nvme_ctrlr* ctrlr,
     return DRVSIM_RETCODE_FAILURE;
 }
 
-int nvme_get_reg64(struct spdk_nvme_ctrlr* ctrlr,
+int nvme_get_reg64(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned long* value)
 {
@@ -198,13 +213,13 @@ int nvme_cpl_is_error(const struct spdk_nvme_cpl* cpl)
     return DRVSIM_RETCODE_FAILURE;
 }
 
-int nvme_fini(struct spdk_nvme_ctrlr* ctrlr)
+int nvme_fini(ctrlr_t* ctrlr)
 {
     DRVSIM_NOT_IMPLEMENTED("not implemented\n");
     return DRVSIM_RETCODE_FAILURE;
 }
 
-struct spdk_nvme_ctrlr* nvme_init(char * traddr, unsigned int port)
+ctrlr_t* nvme_init(char * traddr, unsigned int port)
 {
     DRVSIM_LOG("traddr %s, port %u\n", traddr, port);
     DRVSIM_NOT_IMPLEMENTED("not implemented\n");
@@ -236,7 +251,7 @@ int driver_fini(void)
     return DRVSIM_RETCODE_FAILURE;
 }
 
-void driver_init_num_queues(struct spdk_nvme_ctrlr* ctrlr, uint32_t cdw0)
+void driver_init_num_queues(ctrlr_t* ctrlr, uint32_t cdw0)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return;
@@ -251,9 +266,8 @@ int driver_init(void)
 ////module: pcie ctrlr
 ///////////////////////////////
 
-struct spdk_pci_device* pcie_init(struct spdk_nvme_ctrlr* ctrlr)
+struct spdk_pci_device* pcie_init(ctrlr_t* ctrlr)
 {
-  assert(ctrlr->trid.trtype == SPDK_NVME_TRANSPORT_PCIE);
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return NULL;
 }
@@ -274,13 +288,13 @@ int pcie_cfg_write8(struct spdk_pci_device* pci,
     return DRVSIM_RETCODE_FAILURE;
 }
 
-bool driver_no_secondary(struct spdk_nvme_ctrlr* ctrlr)
+bool driver_no_secondary(ctrlr_t* ctrlr)
 {
     DRVSIM_NOT_IMPLEMENTED("not implemented\n");
     return false;
 }
 
-void crc32_unlock_all(struct spdk_nvme_ctrlr* ctrlr)
+void crc32_unlock_all(ctrlr_t* ctrlr)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return;

@@ -34,7 +34,7 @@
 cdef extern from "driver.h":
     ctypedef struct qpair:
         pass
-    ctypedef struct ctrlr:
+    ctypedef struct ctrlr_t:
         pass
     ctypedef struct namespace:
         pass
@@ -93,7 +93,7 @@ cdef extern from "driver.h":
         unsigned int latency_average_us
 
     ctypedef void(*cmd_cb_func)(void * cmd_cb_arg, const cpl * cpl)
-    ctypedef void(*timeout_cb_func)(void * cb_arg, ctrlr * ctrlr,
+    ctypedef void(*timeout_cb_func)(void * cb_arg, ctrlr_t * ctrlr,
                                     qpair * qpair, unsigned short cid)
 
     int driver_init()
@@ -101,7 +101,7 @@ cdef extern from "driver.h":
     unsigned long driver_config(unsigned long cfg_word)
     unsigned long driver_config_read()
 
-    pcie * pcie_init(ctrlr * c)
+    pcie * pcie_init(ctrlr_t * c)
     int pcie_cfg_read8(pcie * pci,
                        unsigned char * value,
                        unsigned int offset)
@@ -109,29 +109,29 @@ cdef extern from "driver.h":
                         unsigned char value,
                         unsigned int offset)
 
-    ctrlr * nvme_init(char * traddr, unsigned int port)
-    int nvme_fini(ctrlr * c)
-    void nvme_bar_recover(ctrlr* c)
-    void nvme_bar_remap(ctrlr* c)
+    ctrlr_t * nvme_init(char * traddr, unsigned int port)
+    int nvme_fini(ctrlr_t * c)
+    void nvme_bar_recover(ctrlr_t* c)
+    void nvme_bar_remap(ctrlr_t* c)
 
-    int nvme_set_reg32(ctrlr * c,
+    int nvme_set_reg32(ctrlr_t * c,
                        unsigned int offset,
                        unsigned int value)
-    int nvme_get_reg32(ctrlr * c,
+    int nvme_get_reg32(ctrlr_t * c,
                        unsigned int offset,
                        unsigned int * value)
-    int nvme_set_reg64(ctrlr * c,
+    int nvme_set_reg64(ctrlr_t * c,
                        unsigned int offset,
                        unsigned long value)
-    int nvme_get_reg64(ctrlr * c,
+    int nvme_get_reg64(ctrlr_t * c,
                        unsigned int offset,
                        unsigned long * value)
-    int nvme_set_adminq(ctrlr * c)
-    int nvme_set_ns(ctrlr * c)
+    int nvme_set_adminq(ctrlr_t * c)
+    int nvme_set_ns(ctrlr_t * c)
 
-    int nvme_wait_completion_admin(ctrlr * c)
+    int nvme_wait_completion_admin(ctrlr_t * c)
     void nvme_cmd_cb_print_cpl(void * qpair, const cpl * cpl)
-    int nvme_send_cmd_raw(ctrlr * c,
+    int nvme_send_cmd_raw(ctrlr_t * c,
                           qpair * qpair,
                           unsigned int cdw0,
                           unsigned int nsid,
@@ -145,10 +145,10 @@ cdef extern from "driver.h":
                           cmd_cb_func cb_fn,
                           void * cb_arg)
     bint nvme_cpl_is_error(const cpl * cpl)
-    namespace * nvme_get_ns(ctrlr * c, unsigned int nsid)
-    void crc32_unlock_all(ctrlr * c)
+    namespace * nvme_get_ns(ctrlr_t * c, unsigned int nsid)
+    void crc32_unlock_all(ctrlr_t * c)
 
-    void nvme_register_timeout_cb(ctrlr * ctrlr,
+    void nvme_register_timeout_cb(ctrlr_t * ctrlr,
                                   timeout_cb_func timeout_cb,
                                   unsigned int msec)
 
@@ -158,20 +158,20 @@ cdef extern from "driver.h":
                        unsigned int pvalue)
     void buffer_fini(void * buf)
 
-    qpair * qpair_create(ctrlr * c,
+    qpair * qpair_create(ctrlr_t * c,
                          unsigned int prio,
                          unsigned int depth,
                          bint ien,
                          unsigned short iv)
     int qpair_wait_completion(qpair * q, unsigned int max_completions)
-    unsigned short qpair_get_latest_cid(qpair * q, ctrlr* c)
-    unsigned int qpair_get_latest_latency(qpair * q, ctrlr* c)
+    unsigned short qpair_get_latest_cid(qpair * q, ctrlr_t* c)
+    unsigned int qpair_get_latest_latency(qpair * q, ctrlr_t* c)
 
     int qpair_get_id(qpair * q)
     int qpair_free(qpair * q)
 
-    namespace * ns_init(ctrlr * c, unsigned int nsid, unsigned long nlba_verify)
-    int ns_refresh(namespace * ns, unsigned int nsid, ctrlr * c)
+    namespace * ns_init(ctrlr_t * c, unsigned int nsid, unsigned long nlba_verify)
+    int ns_refresh(namespace * ns, unsigned int nsid, ctrlr_t * c)
     bint ns_verify_enable(namespace * ns, bint enable)
     int ns_cmd_io(unsigned char opcode,
                   namespace * ns,
@@ -197,7 +197,7 @@ cdef extern from "driver.h":
 
     char* log_buf_dump(const char * header, const void * buf, size_t len, size_t base)
     void log_cmd_dump(qpair * qpair, size_t count)
-    void log_cmd_dump_admin(ctrlr * ctrlr, size_t count)
+    void log_cmd_dump_admin(ctrlr_t * ctrlr, size_t count)
 
     const char* cmd_name(unsigned char opc, int set)
 
@@ -207,9 +207,9 @@ cdef extern from "driver.h":
     void intc_unmask(qpair * q)
 
     void driver_srand(unsigned int seed)
-    unsigned int driver_io_qpair_count(ctrlr* c)
-    bint driver_no_secondary(ctrlr* c)
-    void driver_init_num_queues(ctrlr* c, unsigned int cdw0)
+    unsigned int driver_io_qpair_count(ctrlr_t* c)
+    bint driver_no_secondary(ctrlr_t* c)
+    void driver_init_num_queues(ctrlr_t* c, unsigned int cdw0)
 
     # pensando additions
     int pen_common_connectivity_check(char *src, char *dst, unsigned int count, int return_this)
