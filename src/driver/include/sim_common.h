@@ -7,7 +7,9 @@
 
 #define DRVSIM_NOT_IMPLEMENTED(_FMT_, ...)  \
 do {                                        \
-    DRVSIM_LOG((_FMT_), ##__VA_ARGS__);       \
+    DRVSIM_LOG((_FMT_), ##__VA_ARGS__);     \
+    fflush(stdout);                         \
+    fflush(stderr);                         \
     assert(false);                          \
 } while (0)
 
