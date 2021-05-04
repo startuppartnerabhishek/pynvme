@@ -1,4 +1,9 @@
 {
     "agent_runtime_rootpath": "../../../sim/fork-1/nsv_test/run/",
-    "nsv_test_root_path": "../../../sim/fork-1/nsv_test/"
+    "nsv_test_root_path": "../../../sim/fork-1/nsv_test/",
+    "dev_no": 0,
+    "vf_no": 0,
+    "sq_size": 64,
+    "cq_size": 128,
+    "nr_cmds": 16
 }
