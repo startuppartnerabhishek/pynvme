@@ -71,10 +71,10 @@ def pytest_configure(config):
     
     if deviceMode == "PCIE":
         logging.info("Switching to PCIE mode")
-        deviceMode = "PCIE"
         driverModule = "nvme"
     else:
         assert conf != None, "SIM could not find conf-file name"
+        deviceMode = "SIM"
         with open(conf, "r") as f:
             sim_config = json.load(f)
 
@@ -112,14 +112,19 @@ def script(request):
 
 @pytest.fixture(scope="session")
 def pciaddr(request):
+    logging.info("fixture pciaddr(request %s)" % request)
     if globalTestOptions["mode"] == "PCIE":
+        logging.info("returning pciaddr %s" % request.config.getoption("--pciaddr"))
         return request.config.getoption("--pciaddr")
     else:
+        logging.info("returning config instead of pciaddr %s" % globalTestOptions["config_as_string"])
         return globalTestOptions["config_as_string"]
 
 @pytest.fixture(scope="function")
 def pcie(pciaddr):
-    ret = d.Pcie(pciaddr)
+    logging.info("fixture pcie(pcieaddr %s)" % pciaddr)
+
+    ret = d.Pcie(pciaddr, 0, globalTestOptions["mode"])
     yield ret
     ret.close()
 
