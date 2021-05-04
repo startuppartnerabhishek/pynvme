@@ -1,3 +1,4 @@
 {
-    "agent_runtime_rootpath": "../../../sim/fork-1/nsv_test/run/"
+    "agent_runtime_rootpath": "../../../sim/fork-1/nsv_test/run/",
+    "nsv_test_root_path": "../../../sim/fork-1/nsv_test/"
 }
