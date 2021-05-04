@@ -250,12 +250,6 @@ int nvme_cpl_is_error(const struct spdk_nvme_cpl* cpl)
     return DRVSIM_RETCODE_FAILURE;
 }
 
-int nvme_fini(ctrlr_t* ctrlr)
-{
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-    return DRVSIM_RETCODE_FAILURE;
-}
-
 static void init_sim_config(char *json_string)
 {
     cJSON *conf = cJSON_Parse(json_string);
@@ -297,14 +291,51 @@ static void init_sim_config(char *json_string)
 
 ctrlr_t* nvme_init(char * traddr, unsigned int port)
 {
+    ctrlr_t *ctrl_opaque_handle;
     DRVSIM_LOG("traddr %s, port %u\n", traddr, port);
 
     init_sim_config(traddr);
 
-    agent_interface_callability_check();
+    ctrl_opaque_handle = (ctrlr_t *)malloc(sizeof(ctrlr_t));
 
+    assert(ctrl_opaque_handle);
+
+#if 0
+    ctrl_opaque_handle->ctrlr_api_handle =
+        create_driver(
+            (const char *)&g_sim_config.agent_runtime_rootpath,
+            g_sim_config.dev_no,
+            g_sim_config.vf_no,
+            g_sim_config.sq_size,
+            g_sim_config.cq_size,
+            g_sim_config.nr_cmds);
+
+    if (!ctrl_opaque_handle->ctrlr_api_handle) {
+        free(ctrl_opaque_handle);
+        return NULL;
+    }
+
+#else
     DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-    return NULL;
+    free(ctrl_opaque_handle);
+#endif
+
+    DRVSIM_LOG("not implemented %p (wraps api_handle %p)\n",
+        ctrl_opaque_handle, ctrl_opaque_handle->ctrlr_api_handle);
+
+    return ctrl_opaque_handle;
+}
+
+int nvme_fini(ctrlr_t* ctrlr)
+{
+    assert(ctrlr && ctrlr->ctrlr_api_handle);
+
+    // deallocate the driver instance
+    // TODO/TBD -> call to agent-lib
+
+    free(ctrlr);
+    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
+    return DRVSIM_RETCODE_FAILURE;
 }
 
 ////module: buffer
