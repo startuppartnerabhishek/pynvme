@@ -4,6 +4,8 @@
 #include "sim_common.h"
 #include "../../../spdk/lib/nvme/nvme_internal.h"
 
+#include "client_interface/agent_interface.h"
+
 #include "cJSON.h"
 
 #define MAX_STRING_LEN  1024
