@@ -85,7 +85,7 @@ typedef struct spdk_nvme_cpl cpl;
 typedef struct spdk_nvme_ctrlr ctrlr_t;
 #else
 typedef struct sim_nvme_ctrlr_s {
-    void *ctrl;
+    void *ctrlr_api_handle;
 } ctrlr_t;
 #endif
 
