@@ -266,6 +266,8 @@ ctrlr_t* nvme_init(char * traddr, unsigned int port)
 
     init_sim_config(traddr);
 
+    agent_interface_callability_check();
+
     DRVSIM_NOT_IMPLEMENTED("not implemented\n");
     return NULL;
 }

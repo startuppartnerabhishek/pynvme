@@ -10,6 +10,8 @@ LOGDIR=./logs
 LOGFILE_NAME_TIMESTAMP_FORMAT='+%Y:%m:%d-%R:%S'
 CONF_DIR=./conf
 CONF_FILE=${CONF_DIR}/simconf.json
+NSV_ROOT_DIR=$(jq -rj .nsv_test_root_path ${CONF_FILE})
+AGENT_LIB_PATH=${NSV_ROOT_DIR}/build
 
 if [ "$#" -ne 1 ] && [ "$#" -ne 2 ];
 then
@@ -34,9 +36,11 @@ LOGFILE=${OUTFILE_PREFIX}.log
 REPORTFILE=${OUTFILE_PREFIX}.xls
 
 echo -e "Invoking ${LIGHT_GREEN}PROCEDURE=${PY_PROC} from\nFILE=${PY_FILE}\nLOGFILE=${LOGFILE}\nREPORTFILE=${REPORTFILE}${NC}"
+echo "Will export LD_LIBRARY_PATH = ${AGENT_LIB_PATH}"
 
 BASE_COMMAND='make sim_test'
 
 # set -x
 
+export LD_LIBRARY_PATH=${AGENT_LIB_PATH}
 $BASE_COMMAND TESTS=\"$1\" LOGFILE=${LOGFILE} CONF_FILE=${CONF_FILE} REPORTFILE=${REPORTFILE}

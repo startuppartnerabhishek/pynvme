@@ -533,42 +533,60 @@ cdef class Pcie(object):
     """Pcie class to access PCIe configuration and memory space
 
     # Parameters
-        addr (str): BDF address of PCIe device
+        addr_or_conf (str): BDF address of PCIe device / json runtime conf in SIM mode
     """
 
     cdef d.ctrlr_t * _ctrlr
-    cdef char _bdf[64]
+    cdef char _bdf_or_conf[4096]
     cdef char _vdid[64]
     cdef bint _backup
     cdef long _magic
     cdef int _port
+    cdef int _isPcie
 
-    def __cinit__(self, addr, port=0):
-        # pcie address, start with domain
-        if not os.path.exists("/sys/bus/pci/devices/%s" % addr) and \
-           not addr.startswith("0000:"):
-            if os.path.exists("/sys/bus/pci/devices/0000:%s" % addr):
-                # pci
-                addr = "0000:"+addr
-            elif port == 0:
-                # tcp
-                port = 4420
-
-        bdf = addr.encode('utf-8')
-        strncpy(self._bdf, bdf, strlen(bdf)+1)
-        self._magic = 0x1243568790bacdfe
-        self._ctrlr = d.nvme_init(bdf, port)
-        if self._ctrlr is NULL:
-            raise NvmeEnumerateError("fail to create the controller")
-        #print("create pcie: %x" % <unsigned long>self._ctrlr); sys.stdout.flush()
-        self._backup = False
+    def __cinit__(self, addr_or_conf, port=0, mode="PCIE"):
         self._port = port
+        self._magic = 0x1243568790bacdfe
+        self._backup = False
 
-        #get vdid of pcie device
-        if port == 0:
-            vdid = '%04x %04x' % (self.register(0, 2), self.register(2, 2))
-            vdid = vdid.encode('utf-8')
-            strncpy(self._vdid, vdid, strlen(vdid)+1)
+        print("create pcie (mode %s): ENTERED" % mode); sys.stdout.flush()
+
+        if mode == "PCIE":
+            print("create pcie (PCIE mode): %s " % addr_or_conf); sys.stdout.flush()
+            self._isPcie = 1
+            # pcie address, start with domain
+            if not os.path.exists("/sys/bus/pci/devices/%s" % addr_or_conf) and \
+            not addr_or_conf.startswith("0000:"):
+                if os.path.exists("/sys/bus/pci/devices/0000:%s" % addr_or_conf):
+                    # pci
+                    addr_or_conf = "0000:"+addr_or_conf
+                elif port == 0:
+                    # tcp
+                    port = 4420
+
+            bdf = addr_or_conf.encode('utf-8')
+            strncpy(self._bdf_or_conf, bdf, strlen(bdf)+1)
+            self._ctrlr = d.nvme_init(bdf, port)
+            if self._ctrlr is NULL:
+                raise NvmeEnumerateError("fail to create the controller (PCIE)")
+            print("create pcie: %x" % <unsigned long>self._ctrlr); sys.stdout.flush()
+
+            #get vdid of pcie device
+            if port == 0:
+                vdid = '%04x %04x' % (self.register(0, 2), self.register(2, 2))
+                vdid = vdid.encode('utf-8')
+                strncpy(self._vdid, vdid, strlen(vdid)+1)
+        else:
+            # we are in SIM mode - no raw pcie device here, just create a regular controller
+            print("create pcie (SIM mode): %s " % addr_or_conf); sys.stdout.flush()
+            self._isPcie = 0
+            conf = addr_or_conf.encode('utf-8')
+            strncpy(self._bdf_or_conf, conf, strlen(conf)+1)
+            self._ctrlr = d.nvme_init(conf, port)
+            if self._ctrlr is NULL:
+                raise NvmeEnumerateError("fail to create the controller (SIM)")
+
+        print("create pcie: Leaving - isPcie %u " % self._isPcie); sys.stdout.flush()
 
     def close(self):
         """close to explictly release its resources instead of del"""
