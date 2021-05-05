@@ -404,7 +404,7 @@ int nvme_fini(ctrlr_t* ctrlr)
 
     DRVSIM_LOG("Driver resources freed\n");
 
-    return DRVSIM_RETCODE_FAILURE;
+    return DRVSIM_RETCODE_SUCCESS;
 }
 
 ////module: buffer
@@ -447,26 +447,51 @@ int driver_init(void)
 ////module: pcie ctrlr
 ///////////////////////////////
 
-struct spdk_pci_device* pcie_init(ctrlr_t* ctrlr)
+pcie_t* pcie_init(ctrlr_t* ctrlr)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return NULL;
+  return ctrlr; // in SIM mode - these are identical
 }
 
-int pcie_cfg_read8(struct spdk_pci_device* pci,
+int pcie_cfg_read8(pcie_t* pci,
                    unsigned char* value,
                    unsigned int offset)
 {
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-    return DRVSIM_RETCODE_FAILURE;
+    unsigned char *region;
+    ctrlr_t *ctrlr = pci; 
+
+    assert(ctrlr && ctrlr->ctrlr_api_handle);
+
+    region = (unsigned char *)nvme_ctrlr_get_pci_cmd_region_ptr(ctrlr->ctrlr_api_handle);
+
+    *value = region[offset];
+
+    if (g_sim_config.log_register_reads) {
+        DRVSIM_LOG("CFG Read CMD Region (8): ctrlr %p, offset 0x%x, value 0x%x\n",
+            pci, offset, *value);
+    }
+
+    return 0;
 }
 
-int pcie_cfg_write8(struct spdk_pci_device* pci,
+int pcie_cfg_write8(pcie_t* pci,
                     unsigned char value,
                     unsigned int offset)
 {
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-    return DRVSIM_RETCODE_FAILURE;
+    unsigned char *region;
+    ctrlr_t *ctrlr = pci; 
+
+    assert(ctrlr && ctrlr->ctrlr_api_handle);
+
+    region = (unsigned char *)nvme_ctrlr_get_pci_cmd_region_ptr(ctrlr->ctrlr_api_handle);
+
+    region[offset] = value;
+
+    if (g_sim_config.log_register_writes) {
+        DRVSIM_LOG("CFG Write CMD Region (8): ctrlr %p, offset 0x%x, value 0x%x\n",
+            pci, offset, value);
+    }
+
+    return 0;
 }
 
 bool driver_no_secondary(ctrlr_t* ctrlr)

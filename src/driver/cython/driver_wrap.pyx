@@ -77,7 +77,7 @@ __version__ = "2.3.2"
 
 # nvme command timeout, it's a warning
 # drive times out earlier than driver timeout
-_cTIMEOUT = 10
+_cTIMEOUT = 1000
 _timeout_happened = False
 cdef void timeout_driver_cb(void* cb_arg, d.ctrlr_t* ctrlr,
                             d.qpair * qpair, unsigned short cid):
@@ -591,7 +591,7 @@ cdef class Pcie(object):
     def close(self):
         """close to explictly release its resources instead of del"""
 
-        #print("dealloc pcie: %x" % <unsigned long>self._ctrlr); sys.stdout.flush()
+        print("dealloc pcie: %x" % <unsigned long>self._ctrlr); sys.stdout.flush()
         if self._ctrlr is not NULL and self._backup is not True:
             ret = d.nvme_fini(self._ctrlr)
             if ret != 0:
