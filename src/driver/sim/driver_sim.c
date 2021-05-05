@@ -144,7 +144,7 @@ void nvme_register_timeout_cb(ctrlr_t* ctrlr,
                               spdk_nvme_timeout_cb timeout_cb,
                               unsigned int msec)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
+  DRVSIM_NOT_IMPLEMENTED_BENIGN("TODO for later: not implemented - needed to handle qpair timeouts\n");
   return;
 }
 
@@ -325,11 +325,12 @@ int nvme_fini(ctrlr_t* ctrlr)
 {
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
-    // deallocate the driver instance
-    // TODO/TBD -> call to agent-lib
+    deallocate_driver(ctrlr->ctrlr_api_handle);
 
     free(ctrlr);
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
+
+    DRVSIM_LOG("Driver resources freed\n");
+
     return DRVSIM_RETCODE_FAILURE;
 }
 

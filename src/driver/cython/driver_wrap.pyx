@@ -407,7 +407,7 @@ cdef class Subsystem(object):
         """
 
         pcie = self._nvme.pcie
-        bdf = pcie._bdf.decode('utf-8')
+        bdf = pcie._bdf_or_conf.decode('utf-8')
 
         # cut power supply immediately without any delay
         if self._poweroff:
@@ -514,7 +514,7 @@ cdef class Subsystem(object):
         pcie = self._nvme.pcie
         pcie._driver_cleanup()
         pcie._bind_driver(None)
-        subprocess.call('echo 1 > "/sys/bus/pci/devices/%s/remove" 2> /dev/null' % pcie._bdf.decode('utf-8'), shell=True)
+        subprocess.call('echo 1 > "/sys/bus/pci/devices/%s/remove" 2> /dev/null' % pcie._bdf_or_conf.decode('utf-8'), shell=True)
 
         # config spdk driver
         pcie._rescan()
@@ -606,7 +606,7 @@ cdef class Pcie(object):
         if ret != 0:
             raise NvmeDeletionError("fail to close the controller")
 
-        self._ctrlr = d.nvme_init(self._bdf, 0)
+        self._ctrlr = d.nvme_init(self._bdf_or_conf, 0)
         if self._ctrlr is NULL:
             raise NvmeEnumerateError("fail to create the controller")
 
@@ -717,7 +717,7 @@ cdef class Pcie(object):
         return True
 
     def _rescan(self):
-        bdf = self._bdf.decode('utf-8')
+        bdf = self._bdf_or_conf.decode('utf-8')
 
         # rescan device without kernel nvme driver
         subprocess.call('rmmod nvme 2> /dev/null', shell=True)
@@ -729,7 +729,7 @@ cdef class Pcie(object):
             logging.debug("find device on %s" % bdf)
 
     def _bind_driver(self, driver):
-        bdf = self._bdf.decode('utf-8')
+        bdf = self._bdf_or_conf.decode('utf-8')
         vdid = self._vdid.decode('utf-8')
 
         # check if the driver is ready
@@ -748,7 +748,7 @@ cdef class Pcie(object):
             logging.debug("bind %s on %s" % (driver, bdf))
 
     def flr(self):
-        bdf = self._bdf.decode('utf-8')
+        bdf = self._bdf_or_conf.decode('utf-8')
 
         subprocess.call('echo 1 > "/sys/bus/pci/devices/%s/reset" 2> /dev/null' % bdf, shell=True)
 
@@ -770,7 +770,7 @@ cdef class Pcie(object):
             call Controller.reset() to re-initialize controller after this reset
         """
 
-        bdf = self._bdf.decode('utf-8')
+        bdf = self._bdf_or_conf.decode('utf-8')
         dev_link = os.readlink("/sys/bus/pci/devices/"+bdf)
         port = dev_link.split('/')[-2]
         if 'pci' in port:
@@ -916,7 +916,7 @@ cdef class Controller(object):
 
         # register timeout callback
         d.nvme_register_timeout_cb(self.pcie._ctrlr, timeout_driver_cb, self._timeout)
-        logging.debug("nvme initialized: %s", self.pcie._bdf)
+        logging.debug("nvme initialized: %s", self.pcie._bdf_or_conf)
 
         # reset the pcie device
         if self.pcie._port == 0:
@@ -994,7 +994,7 @@ cdef class Controller(object):
 
     @property
     def addr(self):
-        return self.pcie._bdf.decode('utf-8')
+        return self.pcie._bdf_or_conf.decode('utf-8')
 
     @property
     def mdts(self):
@@ -2112,7 +2112,7 @@ cdef class Namespace(object):
         assert isinstance(lba_align, list)
         assert 0 not in lba_align, "lba_align cannot be 0"
 
-        pciaddr = self._nvme.pcie._bdf
+        pciaddr = self._nvme.pcie._bdf_or_conf
         return _IOWorker(pciaddr, self.locker, self._nsid, self.nlba_verify,
                          lba_start, lba_step, io_size,
                          lba_align, lba_random, region_start, region_end,
