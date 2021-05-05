@@ -291,8 +291,9 @@ static void init_sim_config(char *json_string)
 
 ctrlr_t* nvme_init(char * traddr, unsigned int port)
 {
-    ctrlr_t *ctrl_opaque_handle;
-    DRVSIM_LOG("traddr %s, port %u\n", traddr, port);
+    ctrlr_t *ctrl_opaque_handle = NULL;
+
+    DRVSIM_LOG("[ENTERING] traddr %s, port %u\n", traddr, port);
 
     init_sim_config(traddr);
 
@@ -300,7 +301,6 @@ ctrlr_t* nvme_init(char * traddr, unsigned int port)
 
     assert(ctrl_opaque_handle);
 
-#if 0
     ctrl_opaque_handle->ctrlr_api_handle =
         create_driver(
             (const char *)&g_sim_config.agent_runtime_rootpath,
@@ -315,12 +315,7 @@ ctrlr_t* nvme_init(char * traddr, unsigned int port)
         return NULL;
     }
 
-#else
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-    free(ctrl_opaque_handle);
-#endif
-
-    DRVSIM_LOG("not implemented %p (wraps api_handle %p)\n",
+    DRVSIM_LOG("Returning Driver-API handle %p (wraps api_handle %p)\n",
         ctrl_opaque_handle, ctrl_opaque_handle->ctrlr_api_handle);
 
     return ctrl_opaque_handle;
