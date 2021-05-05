@@ -78,15 +78,16 @@
 
 typedef struct spdk_nvme_qpair qpair;
 typedef struct spdk_nvme_ns namespace;
-typedef struct spdk_pci_device pcie;
 typedef struct spdk_nvme_cpl cpl;
 
 #ifndef SIM_MODE
 typedef struct spdk_nvme_ctrlr ctrlr_t;
+typedef struct spdk_pci_device pcie_t;
 #else
 typedef struct sim_nvme_ctrlr_s {
     void *ctrlr_api_handle;
 } ctrlr_t;
+typedef ctrlr_t pcie_t; // in SIM MODE, a controller also provides PCIE access
 #endif
 
 
@@ -198,11 +199,11 @@ extern uint32_t driver_io_qpair_count(ctrlr_t* ctrlr);
 extern bool driver_no_secondary(ctrlr_t* ctrlr);
 extern void driver_init_num_queues(ctrlr_t * ctrlr, uint32_t cdw0);
 
-extern pcie* pcie_init(ctrlr_t * ctrlr);
-extern int pcie_cfg_read8(struct spdk_pci_device* pci,
+extern pcie_t* pcie_init(ctrlr_t * ctrlr);
+extern int pcie_cfg_read8(pcie_t* pci,
                           unsigned char* value,
                           unsigned int offset);
-extern int pcie_cfg_write8(struct spdk_pci_device* pci,
+extern int pcie_cfg_write8(pcie_t* pci,
                            unsigned char value,
                            unsigned int offset);
 

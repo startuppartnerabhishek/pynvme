@@ -909,20 +909,20 @@ static void attach_cb(void *cb_ctx,
 ////module: pcie ctrlr
 ///////////////////////////////
 
-struct spdk_pci_device* pcie_init(ctrlr_t * ctrlr)
+pcie_t* pcie_init(ctrlr_t * ctrlr)
 {
   assert(ctrlr->trid.trtype == SPDK_NVME_TRANSPORT_PCIE);
   return spdk_nvme_ctrlr_get_pci_device(ctrlr);
 }
 
-int pcie_cfg_read8(struct spdk_pci_device* pci,
+int pcie_cfg_read8(pcie_t* pci,
                    unsigned char* value,
                    unsigned int offset)
 {
   return spdk_pci_device_cfg_read8(pci, value, offset);
 }
 
-int pcie_cfg_write8(struct spdk_pci_device* pci,
+int pcie_cfg_write8(pcie_t* pci,
                     unsigned char value,
                     unsigned int offset)
 {
