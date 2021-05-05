@@ -102,14 +102,6 @@ struct spdk_nvme_ns* nvme_get_ns(ctrlr_t* ctrlr,
   return NULL;
 }
 
-int nvme_set_reg32(ctrlr_t* ctrlr,
-                   unsigned int offset,
-                   unsigned int value)
-{
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return DRVSIM_RETCODE_FAILURE;
-}
-
 int nvme_send_cmd_raw(ctrlr_t* ctrlr,
                       struct spdk_nvme_qpair *qpair,
                       unsigned int cdw0,
@@ -232,16 +224,40 @@ int nvme_get_reg32(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned int* value)
 {
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-    return DRVSIM_RETCODE_FAILURE;
+    assert(ctrlr && ctrlr->ctrlr_api_handle);
+
+    return nvme_ctrlr_get_pcie_registers(
+        ctrlr->ctrlr_api_handle, offset, (void *)value, sizeof(unsigned int));
 }
 
 int nvme_get_reg64(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned long* value)
 {
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-    return DRVSIM_RETCODE_FAILURE;
+    assert(ctrlr && ctrlr->ctrlr_api_handle);
+
+    return nvme_ctrlr_get_pcie_registers(
+        ctrlr->ctrlr_api_handle, offset, (void *)value, sizeof(unsigned long));
+}
+
+int nvme_set_reg32(ctrlr_t* ctrlr,
+                   unsigned int offset,
+                   unsigned int value)
+{
+    assert(ctrlr && ctrlr->ctrlr_api_handle);
+
+    return nvme_ctrlr_set_pcie_registers(
+        ctrlr->ctrlr_api_handle, offset, (void *)&value, sizeof(unsigned int));
+}
+
+int nvme_set_reg64(ctrlr_t* ctrlr,
+                   unsigned int offset,
+                   unsigned long value)
+{
+    assert(ctrlr && ctrlr->ctrlr_api_handle);
+
+    return nvme_ctrlr_set_pcie_registers(
+        ctrlr->ctrlr_api_handle, offset, (void *)&value, sizeof(unsigned long));
 }
 
 int nvme_cpl_is_error(const struct spdk_nvme_cpl* cpl)
