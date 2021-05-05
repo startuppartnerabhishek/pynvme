@@ -5,6 +5,12 @@
 
 #define __SHORTED_FILENAME__ (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
 
+#define DRVSIM_LOG_UNDECORATED_TO_FILE(_FILE_STAR_, _FMT_, ...)                                                                  \
+do {                                                                                            \
+    fprintf(_FILE_STAR_, _FMT_, ##__VA_ARGS__);   \
+    fflush(stdout);                               \
+} while (0)
+
 #define DRVSIM_LOG_TO_FILE(_FILE_STAR_, _FMT_, ...)                                                                  \
 do {                                                                                            \
     fprintf(_FILE_STAR_, "%s:%u %s(): "_FMT_, __SHORTED_FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__);   \
@@ -32,5 +38,7 @@ do {                                                    \
 
 #define DRVSIM_RETCODE_SUCCESS 0
 #define DRVSIM_RETCODE_FAILURE -1
+
+void hex_dump(const void* data, size_t size);
 
 #endif

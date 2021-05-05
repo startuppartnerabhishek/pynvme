@@ -26,6 +26,7 @@ set(ALL_SRC
     ${SIM_DIR}/driver_sim.c
     ${SIM_DIR}/intr_mgt_sim.c
     ${SIM_DIR}/ioworker_sim.c
+    ${SIM_DIR}/sim_utils.c
     ${SIM_DIR}/cJSON/cJSON.c
 
     ${COMMON_DIR}/driver_common.c

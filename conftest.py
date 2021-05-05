@@ -40,6 +40,7 @@ import logging
 import inspect
 import importlib
 import json
+import sys
 
 # defer this binding
 # import nvme as d
@@ -131,9 +132,12 @@ def pcie(pciaddr):
     
 @pytest.fixture(scope="function")
 def nvme0(pcie):
+    logging.info("fixture nvme0(pcie)"); sys.stdout.flush();
+    logging.info(pcie); sys.stdout.flush();
     ret = d.Controller(pcie)
+    logging.info("fixture nvme0 - got controller object"); sys.stdout.flush();
+    logging.info(ret); sys.stdout.flush();
     yield ret
-
 
 @pytest.fixture(scope="function")
 def subsystem(nvme0):
