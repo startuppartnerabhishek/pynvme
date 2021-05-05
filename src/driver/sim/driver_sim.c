@@ -23,8 +23,9 @@ typedef struct sim_config_s {
     unsigned int sq_size;
     unsigned int cq_size;
     unsigned int nr_cmds;
+    unsigned int log_register_reads;
+    unsigned int log_register_writes;
 } sim_config_t;
-
 
 
 struct spdk_log_flag SPDK_LOG_NVME = {
@@ -43,6 +44,8 @@ static sim_config_item_t g_simcfg_file_items[] = {
     {"sq_size", false, &g_sim_config.sq_size},
     {"cq_size", false, &g_sim_config.cq_size},
     {"nr_cmds", false, &g_sim_config.nr_cmds},
+    {"log_register_reads", false, &g_sim_config.log_register_reads},
+    {"log_register_writes", false, &g_sim_config.log_register_writes},
 };
 
 static void init_sim_config(char *json_string);
@@ -226,40 +229,92 @@ int nvme_get_reg32(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned int* value)
 {
+    int ret;
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
-    return nvme_ctrlr_get_pcie_registers(
+    ret = nvme_ctrlr_get_pcie_registers(
         ctrlr->ctrlr_api_handle, offset, (void *)value, sizeof(unsigned int));
+
+    if (0 == ret) {
+        if (g_sim_config.log_register_reads) {
+            DRVSIM_LOG("Register Read (32): ctrlr %p, offset 0x%x\n", ctrlr, offset);
+            hex_dump(&value, sizeof(unsigned int));
+        }
+    } else {
+        DRVSIM_LOG_TO_FILE(stderr, "Register Read (32) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
+    }
+
+    return ret;
 }
 
 int nvme_get_reg64(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned long* value)
 {
+    int ret;
+
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
-    return nvme_ctrlr_get_pcie_registers(
+    ret = nvme_ctrlr_get_pcie_registers(
         ctrlr->ctrlr_api_handle, offset, (void *)value, sizeof(unsigned long));
+
+    if (0 == ret) {
+        if (g_sim_config.log_register_reads) {
+            DRVSIM_LOG("Register Read (64): ctrlr %p, offset 0x%x\n", ctrlr, offset);
+            hex_dump(&value, sizeof(unsigned long));
+        }
+    } else {
+        DRVSIM_LOG_TO_FILE(stderr, "Register Read (64) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
+    }
+
+    return ret;
 }
 
 int nvme_set_reg32(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned int value)
 {
+    int ret;
+
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
-    return nvme_ctrlr_set_pcie_registers(
+    ret = nvme_ctrlr_set_pcie_registers(
         ctrlr->ctrlr_api_handle, offset, (void *)&value, sizeof(unsigned int));
+
+    if (0 == ret) {
+        if (g_sim_config.log_register_writes) {
+            DRVSIM_LOG("Register Write (32): ctrlr %p, offset 0x%x\n", ctrlr, offset);
+            hex_dump(&value, sizeof(unsigned int));
+        }
+    } else {
+        DRVSIM_LOG_TO_FILE(stderr, "Register Write (32) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
+    }
+
+    return ret;
 }
 
 int nvme_set_reg64(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned long value)
 {
+    int ret;
+
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
-    return nvme_ctrlr_set_pcie_registers(
+    ret = nvme_ctrlr_set_pcie_registers(
         ctrlr->ctrlr_api_handle, offset, (void *)&value, sizeof(unsigned long));
+
+    if (0 == ret) {
+        if (g_sim_config.log_register_writes) {
+            DRVSIM_LOG("Register Write (64): ctrlr %p, offset 0x%x\n", ctrlr, offset);
+            hex_dump(&value, sizeof(unsigned long));
+        }
+    } else {
+        DRVSIM_LOG_TO_FILE(stderr, "Register Write (64) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
+    }
+
+    return ret;
+
 }
 
 int nvme_cpl_is_error(const struct spdk_nvme_cpl* cpl)
