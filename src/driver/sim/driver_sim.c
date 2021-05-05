@@ -122,8 +122,10 @@ int nvme_send_cmd_raw(ctrlr_t* ctrlr,
 
 int nvme_set_adminq(ctrlr_t *ctrlr)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return DRVSIM_RETCODE_FAILURE;
+    assert(ctrlr && ctrlr->ctrlr_api_handle);
+    
+    // admin qpair reset is TODO, it is their in pynvme driver.c 
+    return enable_driver(ctrlr->ctrlr_api_handle); 
 }
 
 int nvme_wait_completion_admin(ctrlr_t* ctrlr)
