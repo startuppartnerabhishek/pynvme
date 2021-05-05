@@ -904,10 +904,14 @@ cdef class Controller(object):
     cdef object aer_cb_func
 
     def __cinit__(self, pcie, nvme_init_func=None):
+        logging.debug("Creating Controller object"); sys.stdout.flush();
+
         assert type(pcie) is Pcie or type(pcie) is Tcp
         assert nvme_init_func is True or \
                nvme_init_func is None or \
                callable(nvme_init_func)
+
+        logging.debug("Creating Controller object - sanity checks ok"); sys.stdout.flush();
 
         self.pcie = pcie
         self._timeout = _cTIMEOUT*1000
@@ -916,7 +920,7 @@ cdef class Controller(object):
 
         # register timeout callback
         d.nvme_register_timeout_cb(self.pcie._ctrlr, timeout_driver_cb, self._timeout)
-        logging.debug("nvme initialized: %s", self.pcie._bdf_or_conf)
+        logging.debug("nvme initialized: %s", self.pcie._bdf_or_conf); sys.stdout.flush();
 
         # reset the pcie device
         if self.pcie._port == 0:
