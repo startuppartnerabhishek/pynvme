@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#define __SHORTED_FILENAME__ (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
+#define __SHORTENED_FILENAME__ (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #define DRVSIM_LOG_UNDECORATED_TO_FILE(_FILE_STAR_, _FMT_, ...)                                                                  \
 do {                                                                                            \
@@ -13,7 +13,7 @@ do {                                                                            
 
 #define DRVSIM_LOG_TO_FILE(_FILE_STAR_, _FMT_, ...)                                                                  \
 do {                                                                                            \
-    fprintf(_FILE_STAR_, "%s:%u %s(): "_FMT_, __SHORTED_FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__);   \
+    fprintf(_FILE_STAR_, "%s:%u %s(): "_FMT_, __SHORTENED_FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__);   \
     fflush(stdout);                                                                             \
 } while (0)
 

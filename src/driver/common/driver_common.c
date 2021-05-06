@@ -247,3 +247,8 @@ void buffer_pattern_init(void *buf, size_t bytes, uint32_t ptype, uint32_t pvalu
   }
    
 }
+
+int nvme_cpl_is_error(const struct spdk_nvme_cpl* cpl)
+{
+  return spdk_nvme_cpl_is_error(cpl);
+}

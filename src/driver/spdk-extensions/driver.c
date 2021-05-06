@@ -1142,12 +1142,6 @@ void nvme_register_timeout_cb(ctrlr_t * ctrlr,
       ctrlr, (uint64_t)msec*1000ULL, timeout_cb, NULL);
 }
 
-int nvme_cpl_is_error(const struct spdk_nvme_cpl* cpl)
-{
-  return spdk_nvme_cpl_is_error(cpl);
-}
-
-
 struct spdk_nvme_ns* nvme_get_ns(ctrlr_t * ctrlr,
                                  uint32_t nsid)
 {
