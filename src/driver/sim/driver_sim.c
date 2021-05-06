@@ -229,11 +229,23 @@ int nvme_get_reg32(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned int* value)
 {
-    int ret;
+    int ret = 0;
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
+#if 0
+    /* this is for raw pci-memory access - not what the test logic expects */
     ret = nvme_ctrlr_get_pcie_registers(
         ctrlr->ctrlr_api_handle, offset, (void *)value, sizeof(unsigned int));
+#else
+    /* test logic expects BAR access */
+    unsigned char *region = (unsigned char *)nvme_ctrlr_get_pci_cmd_region_ptr(ctrlr->ctrlr_api_handle);
+
+    if (g_sim_config.log_register_reads) {
+        DRVSIM_LOG("BAR base %p, offset 0x%x => %p\n", region, offset, &region[offset]);
+    }
+
+    memcpy(value, &region[offset], sizeof(unsigned int));
+#endif
 
     if (0 == ret) {
         if (g_sim_config.log_register_reads) {
@@ -251,12 +263,24 @@ int nvme_get_reg64(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned long* value)
 {
-    int ret;
+    int ret = 0;
 
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
+#if 0
+    /* this is for raw pci-memory access - not what the test logic expects */
     ret = nvme_ctrlr_get_pcie_registers(
         ctrlr->ctrlr_api_handle, offset, (void *)value, sizeof(unsigned long));
+#else
+    /* test logic expects BAR access */
+    unsigned char *region = (unsigned char *)nvme_ctrlr_get_pci_cmd_region_ptr(ctrlr->ctrlr_api_handle);
+
+    if (g_sim_config.log_register_reads) {
+        DRVSIM_LOG("BAR base %p, offset 0x%x => %p\n", region, offset, &region[offset]);
+    }
+
+    memcpy(value, &region[offset], sizeof(unsigned long));
+#endif
 
     if (0 == ret) {
         if (g_sim_config.log_register_reads) {
@@ -274,12 +298,24 @@ int nvme_set_reg32(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned int value)
 {
-    int ret;
+    int ret = 0;
 
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
+#if 0
+    /* this is for raw pci-memory access - not what the test logic expects */
     ret = nvme_ctrlr_set_pcie_registers(
         ctrlr->ctrlr_api_handle, offset, (void *)&value, sizeof(unsigned int));
+#else
+    /* test logic expects BAR access */
+    unsigned char *region = (unsigned char *)nvme_ctrlr_get_pci_cmd_region_ptr(ctrlr->ctrlr_api_handle);
+
+    if (g_sim_config.log_register_writes) {
+        DRVSIM_LOG("BAR base %p, offset 0x%x => %p\n", region, offset, &region[offset]);
+    }
+
+    memcpy(&region[offset], &value, sizeof(unsigned int));
+#endif
 
     if (0 == ret) {
         if (g_sim_config.log_register_writes) {
@@ -297,12 +333,24 @@ int nvme_set_reg64(ctrlr_t* ctrlr,
                    unsigned int offset,
                    unsigned long value)
 {
-    int ret;
+    int ret = 0;
 
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
+#if 0
+    /* this is for raw pci-memory access - not what the test logic expects */
     ret = nvme_ctrlr_set_pcie_registers(
         ctrlr->ctrlr_api_handle, offset, (void *)&value, sizeof(unsigned long));
+#else
+    /* test logic expects BAR access */
+    unsigned char *region = (unsigned char *)nvme_ctrlr_get_pci_cmd_region_ptr(ctrlr->ctrlr_api_handle);
+
+    if (g_sim_config.log_register_writes) {
+        DRVSIM_LOG("BAR base %p, offset 0x%x => %p\n", region, offset, &region[offset]);
+    }
+
+    memcpy(&region[offset], &value, sizeof(unsigned long));
+#endif
 
     if (0 == ret) {
         if (g_sim_config.log_register_writes) {
@@ -466,6 +514,10 @@ int pcie_cfg_read8(pcie_t* pci,
     *value = region[offset];
 
     if (g_sim_config.log_register_reads) {
+        DRVSIM_LOG("BAR base %p, offset 0x%x => %p\n", region, offset, &region[offset]);
+    }
+
+    if (g_sim_config.log_register_reads) {
         DRVSIM_LOG("CFG Read CMD Region (8): ctrlr %p, offset 0x%x, value 0x%x\n",
             pci, offset, *value);
     }
@@ -485,6 +537,10 @@ int pcie_cfg_write8(pcie_t* pci,
     region = (unsigned char *)nvme_ctrlr_get_pci_cmd_region_ptr(ctrlr->ctrlr_api_handle);
 
     region[offset] = value;
+
+    if (g_sim_config.log_register_writes) {
+        DRVSIM_LOG("BAR base %p, offset 0x%x => %p\n", region, offset, &region[offset]);
+    }
 
     if (g_sim_config.log_register_writes) {
         DRVSIM_LOG("CFG Write CMD Region (8): ctrlr %p, offset 0x%x, value 0x%x\n",
