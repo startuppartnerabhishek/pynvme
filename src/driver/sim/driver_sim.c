@@ -16,6 +16,8 @@ typedef struct sim_config_item_s {
     void *save_to;
 } sim_config_item_t;
 
+#define CONF_FILE_PARSE_ENTRY(__field__, __is_string__) {#__field__, __is_string__, &g_sim_config.__field__}
+
 typedef struct sim_config_s { 
     char agent_runtime_rootpath[MAX_STRING_LEN];
     unsigned int dev_no;
@@ -25,6 +27,7 @@ typedef struct sim_config_s {
     unsigned int nr_cmds;
     unsigned int log_register_reads;
     unsigned int log_register_writes;
+    unsigned int log_buf_alloc_free;
     ctrlr_t *p_default_controller;
 } sim_config_t;
 
@@ -39,14 +42,15 @@ static sim_config_t g_sim_config;
 
 
 static sim_config_item_t g_simcfg_file_items[] = {
-    {"agent_runtime_rootpath", true, &g_sim_config.agent_runtime_rootpath},
-    {"dev_no", false, &g_sim_config.dev_no},
-    {"vf_no", false, &g_sim_config.vf_no},
-    {"sq_size", false, &g_sim_config.sq_size},
-    {"cq_size", false, &g_sim_config.cq_size},
-    {"nr_cmds", false, &g_sim_config.nr_cmds},
-    {"log_register_reads", false, &g_sim_config.log_register_reads},
-    {"log_register_writes", false, &g_sim_config.log_register_writes},
+    CONF_FILE_PARSE_ENTRY(agent_runtime_rootpath, true),
+    CONF_FILE_PARSE_ENTRY(dev_no, false),
+    CONF_FILE_PARSE_ENTRY(vf_no, false),
+    CONF_FILE_PARSE_ENTRY(sq_size, false),
+    CONF_FILE_PARSE_ENTRY(cq_size, false),
+    CONF_FILE_PARSE_ENTRY(nr_cmds, false),
+    CONF_FILE_PARSE_ENTRY(log_register_reads, false),
+    CONF_FILE_PARSE_ENTRY(log_register_writes, false),
+    CONF_FILE_PARSE_ENTRY(log_buf_alloc_free, false),
 };
 
 static void init_sim_config(char *json_string);
@@ -476,6 +480,11 @@ void *buffer_init(size_t bytes, uint64_t *phys_addr,
             g_sim_config.p_default_controller->ctrlr_api_handle,
                 bytes, phys_addr);
 
+    if (g_sim_config.log_buf_alloc_free) {
+        DRVSIM_LOG("buf = %p, api-handle %p, size %lu\n",
+            buf, g_sim_config.p_default_controller->ctrlr_api_handle, bytes);
+    }
+
     if (!buf) {
         return buf;
     }
@@ -488,6 +497,11 @@ void *buffer_init(size_t bytes, uint64_t *phys_addr,
 void buffer_fini(void* buf)
 {
     assert(g_sim_config.p_default_controller && g_sim_config.p_default_controller->ctrlr_api_handle);
+
+    if (g_sim_config.log_buf_alloc_free) {
+        DRVSIM_LOG("buf = %p, api-handle %p\n",
+            buf, g_sim_config.p_default_controller->ctrlr_api_handle);
+    }
 
     nvme_driver_buffer_free(g_sim_config.p_default_controller->ctrlr_api_handle, buf);
 

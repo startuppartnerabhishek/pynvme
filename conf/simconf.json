@@ -7,5 +7,6 @@
     "cq_size": 128,
     "nr_cmds": 16,
     "log_register_reads": 0,
-    "log_register_writes": 0
+    "log_register_writes": 0,
+    "log_buf_alloc_free": 1
 }
