@@ -6,6 +6,6 @@
     "sq_size": 64,
     "cq_size": 128,
     "nr_cmds": 16,
-    "log_register_reads": 1,
-    "log_register_writes": 1
+    "log_register_reads": 0,
+    "log_register_writes": 0
 }
