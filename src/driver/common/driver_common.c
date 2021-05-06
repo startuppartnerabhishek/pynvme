@@ -197,3 +197,53 @@ bool ns_verify_enable(struct spdk_nvme_ns* ns, bool enable)
 
   return false;
 }
+
+void buffer_pattern_init(void *buf, size_t bytes, uint32_t ptype, uint32_t pvalue)
+{
+  uint32_t pattern = 0;
+
+  if (ptype == 0)
+  {
+    // if pvalue is not zero, set data buffer all-one
+    if (pvalue != 0)
+    {
+      pattern = 0xffffffff;
+    }
+  }
+  else if (ptype == 32)
+  {
+    pattern = pvalue;
+  }
+  else if (ptype == 0xbeef)
+  {
+    // for random buffer, size the buffer all-zero first
+    pattern = 0;
+  }
+
+  // set the buffer by 32-bit pattern
+  //spdk_dma_zmalloc has set the buffer all-zero already
+  if (pattern != 0)
+  {
+    uint32_t* ptr = buf;
+
+    // left remaining unaligned bytes unset
+    for (uint32_t i=0; i<bytes/sizeof(pattern); i++)
+    {
+      ptr[i] = pattern;
+    }
+  }
+
+  // fill random data according to the percentage
+  if (ptype == 0xbeef)
+  {
+    uint32_t count = 0;
+    int fd = open("/dev/urandom", O_RDONLY);
+
+    assert(pvalue <= 100);  // here needs a percentage <= 100
+    count = (size_t)(bytes*pvalue/100);
+    count = MIN(count, bytes);
+    read(fd, buf, count);
+    close(fd);
+  }
+   
+}

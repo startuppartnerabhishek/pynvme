@@ -50,3 +50,10 @@ def test_driver_common_reachability():
     assert dst == b"CLEARCLEAR"
 
     logging.info("test_driver_common_reachability: test completed SUCCESSFULLY =======================")
+
+def test_nvme_identify_controller(nvme0):
+    logging.info("STARTED TEST test_nvme_identify_controller with nvme0 =========================")
+    logging.info(nvme0)
+    nvme0.identify(d.Buffer(4096)).waitdone()
+
+    logging.info("test_nvme_identify_controller: test completed SUCCESSFULLY =======================")

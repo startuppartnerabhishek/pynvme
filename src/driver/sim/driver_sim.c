@@ -25,6 +25,7 @@ typedef struct sim_config_s {
     unsigned int nr_cmds;
     unsigned int log_register_reads;
     unsigned int log_register_writes;
+    ctrlr_t *p_default_controller;
 } sim_config_t;
 
 
@@ -436,6 +437,8 @@ ctrlr_t* nvme_init(char * traddr, unsigned int port)
         return NULL;
     }
 
+    g_sim_config.p_default_controller = ctrl_opaque_handle;
+
     DRVSIM_LOG("Returning Driver-API handle %p (wraps api_handle %p)\n",
         ctrl_opaque_handle, ctrl_opaque_handle->ctrlr_api_handle);
 
@@ -447,6 +450,10 @@ int nvme_fini(ctrlr_t* ctrlr)
     assert(ctrlr && ctrlr->ctrlr_api_handle);
 
     deallocate_driver(ctrlr->ctrlr_api_handle);
+
+    if (g_sim_config.p_default_controller == ctrlr) {
+        g_sim_config.p_default_controller = NULL;
+    }
 
     free(ctrlr);
 
@@ -461,13 +468,29 @@ int nvme_fini(ctrlr_t* ctrlr)
 void *buffer_init(size_t bytes, uint64_t *phys_addr,
                   uint32_t ptype, uint32_t pvalue)
 {
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-    return NULL;
+    void *buf;
+
+    assert(g_sim_config.p_default_controller && g_sim_config.p_default_controller->ctrlr_api_handle);
+
+    buf = nvme_driver_buffer_alloc(
+            g_sim_config.p_default_controller->ctrlr_api_handle,
+                bytes, phys_addr);
+
+    if (!buf) {
+        return buf;
+    }
+
+    buffer_pattern_init(buf, bytes, ptype, pvalue);
+
+    return buf;
 }
 
 void buffer_fini(void* buf)
 {
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
+    assert(g_sim_config.p_default_controller && g_sim_config.p_default_controller->ctrlr_api_handle);
+
+    nvme_driver_buffer_free(g_sim_config.p_default_controller->ctrlr_api_handle, buf);
+
     return;
 }
 

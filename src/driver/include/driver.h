@@ -310,4 +310,6 @@ extern uint32_t timeval_to_us(struct timeval* t);
 extern int pen_common_connectivity_check(char *src, char *dst, unsigned int count, int return_this);
 extern int pen_sim_connectivity_check(char *src, char *dst, unsigned int count, int return_this);
 
+extern void buffer_pattern_init(void *buf, size_t bytes, uint32_t ptype, uint32_t pvalue);
+
 #endif
