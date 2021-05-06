@@ -31,6 +31,10 @@ typedef struct sim_config_s {
     ctrlr_t *p_default_controller;
 } sim_config_t;
 
+typedef struct completion_cb_context_s {
+    void                *response_args;
+    spdk_nvme_cmd_cb    cb_fn;
+} completion_cb_context_t;
 
 struct spdk_log_flag SPDK_LOG_NVME = {
   .name = "nvme",
@@ -54,6 +58,7 @@ static sim_config_item_t g_simcfg_file_items[] = {
 };
 
 static void init_sim_config(char *json_string);
+static void drvsim_handle_completion(void *cb_args, nvme_ctrlr_completion_t *cmpl);
 
 ////module: qpair
 ///////////////////////////////
@@ -110,6 +115,25 @@ struct spdk_nvme_ns* nvme_get_ns(ctrlr_t* ctrlr,
   return NULL;
 }
 
+static void drvsim_handle_completion(void *cb_args, nvme_ctrlr_completion_t *cmpl)
+{
+    completion_cb_context_t *compl_ctx = (completion_cb_context_t *)cb_args;
+    struct spdk_nvme_cpl *spec_completion = (struct spdk_nvme_cpl *)cmpl;    
+
+    DRVSIM_LOG("Got completion with args %p -> translate to %p, "
+        "cmd-id 0x%x, phase-tag %u, status code %u, type %u\n",
+        cb_args, compl_ctx->response_args, spec_completion->cid,
+        spec_completion->status.p, spec_completion->status.sc, spec_completion->status.sct);
+
+    /*  both agent's and spdk's completion structures are from the spec, so
+        we should be ok to just type-cast and pass on. */
+    compl_ctx->cb_fn(compl_ctx->response_args, spec_completion);
+    
+    free(compl_ctx);
+
+    return;
+}
+
 int nvme_send_cmd_raw(ctrlr_t* ctrlr,
                       struct spdk_nvme_qpair *qpair,
                       unsigned int cdw0,
@@ -124,8 +148,49 @@ int nvme_send_cmd_raw(ctrlr_t* ctrlr,
                       spdk_nvme_cmd_cb cb_fn,
                       void* cb_arg)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return DRVSIM_RETCODE_FAILURE;
+    int ret;
+
+    completion_cb_context_t *compl_ctx;
+
+    assert(ctrlr && ctrlr->ctrlr_api_handle);
+
+    DRVSIM_LOG("ENTERED with response ctrlr %p, qpair %p, buf %p of len %lu, cdw0 0x%08x, "
+                    "nsid 0x%08x, cdw10 = 0x%08x, cb_args %p\n", ctrlr, qpair,
+                    buf, len, cdw0, nsid, cdw10, cb_arg);
+
+    if (qpair) {
+        DRVSIM_NOT_IMPLEMENTED("qpair commands are not implemented\n");
+        return DRVSIM_RETCODE_FAILURE;
+    }
+
+    compl_ctx = (completion_cb_context_t *)malloc(sizeof(completion_cb_context_t));
+
+    assert(NULL != compl_ctx);
+
+    compl_ctx->response_args = cb_arg;
+    compl_ctx->cb_fn = cb_fn;
+
+    ret = nvme_ctrlr_submit_command(
+        ctrlr->ctrlr_api_handle,
+        cdw0,
+        nsid,
+        buf, len,
+        cdw10,
+        cdw11,
+        cdw12,
+        cdw13,
+        cdw14,
+        cdw15,
+        drvsim_handle_completion,
+        compl_ctx
+    );
+
+    if (0 != ret) {
+        free(compl_ctx);
+        return DRVSIM_RETCODE_FAILURE;
+    }
+
+    return ret;
 }
 
 int nvme_set_adminq(ctrlr_t *ctrlr)
@@ -368,12 +433,6 @@ int nvme_set_reg64(ctrlr_t* ctrlr,
 
     return ret;
 
-}
-
-int nvme_cpl_is_error(const struct spdk_nvme_cpl* cpl)
-{
-    DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-    return DRVSIM_RETCODE_FAILURE;
 }
 
 static void init_sim_config(char *json_string)
