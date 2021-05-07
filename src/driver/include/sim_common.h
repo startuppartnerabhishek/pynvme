@@ -46,6 +46,8 @@ do {                                                    \
 #define DRVSIM_RETCODE_SUCCESS 0
 #define DRVSIM_RETCODE_FAILURE -1
 
-void hex_dump(const void* data, size_t size);
+#define DRVSIM_VERY_LARGE_NUMBER ((unsigned int)(-1))
+
+void sim_hex_dump(const void* data, size_t size);
 
 #endif

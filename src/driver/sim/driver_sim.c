@@ -29,6 +29,7 @@ typedef struct sim_config_s {
     unsigned int log_register_writes;
     unsigned int log_buf_alloc_free;
     unsigned int max_log_entries_per_qpair;
+    unsigned int log_dump_adminq_completion_len;
     ctrlr_t *p_default_controller;
 } sim_config_t;
 
@@ -52,12 +53,14 @@ static sim_config_item_t g_simcfg_file_items[] = {
     CONF_FILE_PARSE_ENTRY(log_register_writes, false),
     CONF_FILE_PARSE_ENTRY(log_buf_alloc_free, false),
     CONF_FILE_PARSE_ENTRY(max_log_entries_per_qpair, false),
+    CONF_FILE_PARSE_ENTRY(log_dump_adminq_completion_len, false)
 };
 
 static void init_sim_config(char *json_string);
 static void drvsim_handle_completion(void *cb_args, nvme_ctrlr_completion_t *cmpl);
 static qpair_t *sim_allocate_qpair(ctrlr_t *ctrlr, bool is_adminq);
 static void sim_free_qpair(qpair_t *q);
+static int sim_qpair_process_completions(qpair_t *q, unsigned int max);
 
 ////module: qpair
 ///////////////////////////////
@@ -200,8 +203,8 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
 
     qpair->log_entry_count++;
 
-    DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, log entry count %u\n",
-        qpair, qpair->commands_sent, qpair->responses_received, qpair->log_entry_count);
+    DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, log entry count %u, completions collected %u\n",
+        qpair, qpair->commands_sent, qpair->responses_received, qpair->log_entry_count, qpair->completions_collected);
 
     pthread_mutex_unlock(&qpair->lock);
 
@@ -226,7 +229,7 @@ int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe)
 
     completion_ctx->is_completed = true;
 
-    completion_ctx->qpair->responses_received--;
+    completion_ctx->qpair->responses_received++;
 
     memcpy(&completion_ctx->cpl, cqe, sizeof(cpl));
 
@@ -244,8 +247,10 @@ int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe)
 
     pthread_mutex_unlock(&qpair->lock);
 
-    DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, log entry count %u\n",
-        qpair, qpair->commands_sent, qpair->responses_received, qpair->log_entry_count);
+    DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, "
+            "log entry count %u, completions collected %u\n",
+        qpair, qpair->commands_sent, qpair->responses_received,
+        qpair->log_entry_count, qpair->completions_collected);
 
     return 0;
 }
@@ -273,7 +278,7 @@ int prune_completion_table(qpair_t *qpair, unsigned int max_clean)
 
         scanned++;
 
-        if (e->is_completed) {
+        if (e->is_completed && e->is_processed) { // actually is_processed implies is completed
             sim_cmd_log_entry_t *prev = e->prev;
 
             cleaned++;
@@ -331,6 +336,56 @@ static qpair_t *sim_allocate_qpair(ctrlr_t *ctrlr, bool is_adminq)
     }
 
     return q;
+}
+
+static int sim_qpair_process_completions(qpair_t *q, unsigned int max)
+{
+    int processed = 0;
+    int scanned = 0;
+    DRVSIM_ASSERT((q), "q cannot be NULL\n");
+    sim_cmd_log_entry_t *e = q->log_list_head;
+    const unsigned int log_entry_count = q->log_entry_count;
+
+    pthread_mutex_lock(&q->lock);
+
+    while (processed < max && scanned < log_entry_count) {
+        scanned++;
+
+        DRVSIM_ASSERT((e), "qpair %p has unexpected NULL cmd entry\n", q);
+
+        if (e->is_completed) {
+            if (!e->is_processed) {
+                // whatever processing means, goes here -> log it, maybe?
+                e->is_processed = true;
+                processed++;
+                q->completions_collected++;
+
+                if (g_sim_config.log_dump_adminq_completion_len) {
+                    DRVSIM_LOG("commmand:\n");
+                    sim_hex_dump(&e->cmd, sizeof(e->cmd));
+                    DRVSIM_LOG("completion:\n");
+                    sim_hex_dump(&e->cpl, sizeof(e->cpl));
+                    if (e->response_buf && e->response_buf_len) {
+                        DRVSIM_LOG("response buffer:\n");
+                        sim_hex_dump(e->response_buf,
+                            e->response_buf_len > g_sim_config.log_dump_adminq_completion_len ?
+                                g_sim_config.log_dump_adminq_completion_len : e->response_buf_len);
+                    }
+                }
+            }
+        }
+
+        e = e->next;
+    }
+
+    if (processed) {
+        DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, log entry count %u, completions collected %u\n",
+            q, q->commands_sent, q->responses_received, q->log_entry_count, q->completions_collected);
+    }
+
+    pthread_mutex_unlock(&q->lock);
+
+    return processed;
 }
 
 static void sim_free_qpair(qpair_t *q)
@@ -433,7 +488,7 @@ int nvme_send_cmd_raw(ctrlr_t* ctrlr,
 
     DRVSIM_ASSERT((ctrlr && ctrlr->ctrlr_api_handle), "invalid ctrlr %p or uninitialized api handle\n", ctrlr);
 
-    DRVSIM_LOG("ENTERED with response ctrlr %p, qpair %p, buf %p of len %lu, cdw0 0x%08x, "
+    DRVSIM_LOG("ENTERED with ctrlr %p, qpair %p, buf %p of len %lu, cdw0 0x%08x, "
                     "nsid 0x%08x, cdw10 = 0x%08x, cb_args %p\n", ctrlr, qpair,
                     buf, len, cdw0, nsid, cdw10, cb_arg);
 
@@ -504,8 +559,17 @@ int nvme_set_adminq(ctrlr_t *ctrlr)
 
 int nvme_wait_completion_admin(ctrlr_t* ctrlr)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return DRVSIM_RETCODE_FAILURE;
+    int processed = 0;
+
+    DRVSIM_ASSERT((ctrlr && ctrlr->adminq), "ctrlr %p and adminq should be non-NULL\n", ctrlr);
+
+    processed = sim_qpair_process_completions(ctrlr->adminq, DRVSIM_VERY_LARGE_NUMBER);
+
+    if (processed) {
+        DRVSIM_LOG("ctrlr %p, adminq %p, collected %d completion(s)\n", ctrlr, ctrlr->adminq, processed);
+    }
+
+    return processed;
 }
 
 void nvme_register_timeout_cb(ctrlr_t* ctrlr,
@@ -621,7 +685,7 @@ int nvme_get_reg32(ctrlr_t* ctrlr,
     if (0 == ret) {
         if (g_sim_config.log_register_reads) {
             DRVSIM_LOG("Register Read (32): ctrlr %p, offset 0x%x\n", ctrlr, offset);
-            hex_dump(&value, sizeof(unsigned int));
+            sim_hex_dump(&value, sizeof(unsigned int));
         }
     } else {
         DRVSIM_LOG_TO_FILE(stderr, "Register Read (32) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
@@ -656,7 +720,7 @@ int nvme_get_reg64(ctrlr_t* ctrlr,
     if (0 == ret) {
         if (g_sim_config.log_register_reads) {
             DRVSIM_LOG("Register Read (64): ctrlr %p, offset 0x%x\n", ctrlr, offset);
-            hex_dump(&value, sizeof(unsigned long));
+            sim_hex_dump(&value, sizeof(unsigned long));
         }
     } else {
         DRVSIM_LOG_TO_FILE(stderr, "Register Read (64) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
@@ -691,7 +755,7 @@ int nvme_set_reg32(ctrlr_t* ctrlr,
     if (0 == ret) {
         if (g_sim_config.log_register_writes) {
             DRVSIM_LOG("Register Write (32): ctrlr %p, offset 0x%x\n", ctrlr, offset);
-            hex_dump(&value, sizeof(unsigned int));
+            sim_hex_dump(&value, sizeof(unsigned int));
         }
     } else {
         DRVSIM_LOG_TO_FILE(stderr, "Register Write (32) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
@@ -726,7 +790,7 @@ int nvme_set_reg64(ctrlr_t* ctrlr,
     if (0 == ret) {
         if (g_sim_config.log_register_writes) {
             DRVSIM_LOG("Register Write (64): ctrlr %p, offset 0x%x\n", ctrlr, offset);
-            hex_dump(&value, sizeof(unsigned long));
+            sim_hex_dump(&value, sizeof(unsigned long));
         }
     } else {
         DRVSIM_LOG_TO_FILE(stderr, "Register Write (64) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
