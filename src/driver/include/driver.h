@@ -115,6 +115,7 @@ typedef struct sim_cmd_log_entry_s {
     size_t response_buf_len;
 
     bool is_completed;
+    bool is_processed;
 
     completion_cb_context_t cb_ctx;
 } sim_cmd_log_entry_t;
@@ -128,6 +129,7 @@ typedef struct sim_nvme_qpair_s {
     unsigned int log_entry_count;
     unsigned int commands_sent;
     unsigned int responses_received;
+    unsigned int completions_collected;
     pthread_mutex_t lock;
 } qpair_t;
 

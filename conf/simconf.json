@@ -9,5 +9,6 @@
     "log_register_reads": 0,
     "log_register_writes": 0,
     "log_buf_alloc_free": 1,
-    "max_log_entries_per_qpair": 128
+    "max_log_entries_per_qpair": 128,
+    "log_dump_adminq_completion_len": 64
 }
