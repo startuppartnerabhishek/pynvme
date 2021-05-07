@@ -76,18 +76,91 @@
 #define DCFG_IOW_TERM         (BIT(4))
 
 
-typedef struct spdk_nvme_qpair qpair;
 typedef struct spdk_nvme_ns namespace;
 typedef struct spdk_nvme_cpl cpl;
 
+typedef void (*cmd_cb_func)(void* cb_arg,
+                            const struct spdk_nvme_cpl* cpl);
+
 #ifndef SIM_MODE
+
+/* with SPDK driver */
+
 typedef struct spdk_nvme_ctrlr ctrlr_t;
 typedef struct spdk_pci_device pcie_t;
+typedef struct spdk_nvme_qpair qpair_t;
+
 #else
+
+/* with pensando nvme control plane agent */
+
+struct sim_nvme_ctrlr_s;
+struct sim_nvme_qpair_s;
+
+typedef struct completion_cb_context_s {
+    void                *response_args;
+    spdk_nvme_cmd_cb    cb_fn;
+} completion_cb_context_t;
+
+typedef struct sim_cmd_log_entry_s {
+    struct sim_cmd_log_entry_s *prev;
+    struct sim_cmd_log_entry_s *next;
+
+    struct sim_nvme_qpair_s *qpair;
+
+    struct spdk_nvme_cmd cmd;
+    struct spdk_nvme_cpl cpl;
+
+    void *response_buf;
+    size_t response_buf_len;
+
+    bool is_completed;
+
+    completion_cb_context_t cb_ctx;
+} sim_cmd_log_entry_t;
+
+typedef struct sim_nvme_qpair_s {
+    struct sim_nvme_qpair_s *prev;
+    struct sim_nvme_qpair_s *next;
+    uint16_t			id;
+    struct sim_nvme_ctrlr_s *parent_controller;
+    sim_cmd_log_entry_t *log_list_head;
+    unsigned int log_entry_count;
+    unsigned int commands_sent;
+    unsigned int responses_received;
+    pthread_mutex_t lock;
+} qpair_t;
+
 typedef struct sim_nvme_ctrlr_s {
-    void *ctrlr_api_handle;
+    void        *ctrlr_api_handle;
+    qpair_t     *adminq;
+    qpair_t     *other_queues_list;
 } ctrlr_t;
+
 typedef ctrlr_t pcie_t; // in SIM MODE, a controller also provides PCIE access
+
+sim_cmd_log_entry_t *sim_add_cmd_log_entry(
+                            qpair_t *qpair,
+                            unsigned int cdw0,
+                            unsigned int nsid,
+                            void* buf, size_t len,
+                            unsigned int cdw10,
+                            unsigned int cdw11,
+                            unsigned int cdw12,
+                            unsigned int cdw13,
+                            unsigned int cdw14,
+                            unsigned int cdw15,
+                            cmd_cb_func cb_fn,
+                            void* cb_arg);
+
+int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe);
+
+int prune_completion_table(qpair_t *qpair, unsigned int max_clean);
+
+int free_completion_table(qpair_t *qpair);
+
+void free_log_entry(sim_cmd_log_entry_t *e);
+
 #endif
 
 
@@ -186,10 +259,11 @@ struct cmd_log_table_t {
 };
 
 extern int ioworker_entry(namespace* ns,
-                          struct spdk_nvme_qpair *qpair,
+                          qpair_t *qpair,
                           ioworker_args* args,
                           ioworker_rets* rets);
 
+extern int driver_init_common(void);
 extern int driver_init(void);
 extern int driver_fini(void);
 extern uint64_t driver_config(uint64_t cfg_word);
@@ -229,10 +303,8 @@ extern int nvme_set_ns(ctrlr_t *ctrlr);
 extern int nvme_wait_completion_admin(ctrlr_t * c);
 extern void nvme_cmd_cb_print_cpl(void* qpair, const struct spdk_nvme_cpl* cpl);
 
-typedef void (*cmd_cb_func)(void* cb_arg,
-                            const struct spdk_nvme_cpl* cpl);
 extern int nvme_send_cmd_raw(ctrlr_t * ctrlr,
-                             struct spdk_nvme_qpair *qpair,
+                             qpair_t *qpair,
                              unsigned int cdw0,
                              unsigned int nsid,
                              void* buf, size_t len,
@@ -257,25 +329,25 @@ extern void* buffer_init(size_t bytes, uint64_t *phys_addr,
                          uint32_t ptype, uint32_t pvalue);
 extern void buffer_fini(void* buf);
 
-extern qpair* qpair_create(ctrlr_t *c,
+extern qpair_t* qpair_create(ctrlr_t *c,
                            unsigned int prio,
                            unsigned int depth,
                            bool ien,
                            unsigned short iv);
-extern int qpair_wait_completion(struct spdk_nvme_qpair *q, uint32_t max_completions);
-extern uint16_t qpair_get_latest_cid(struct spdk_nvme_qpair* q,
+extern int qpair_wait_completion(qpair_t *q, uint32_t max_completions);
+extern uint16_t qpair_get_latest_cid(qpair_t* q,
                                      ctrlr_t * c);
-extern uint32_t qpair_get_latest_latency(struct spdk_nvme_qpair* q,
+extern uint32_t qpair_get_latest_latency(qpair_t* q,
                                          ctrlr_t * c);
-extern int qpair_get_id(struct spdk_nvme_qpair* q);
-extern int qpair_free(struct spdk_nvme_qpair* q);
+extern int qpair_get_id(qpair_t* q);
+extern int qpair_free(qpair_t* q);
 
 extern namespace* ns_init(ctrlr_t * c, unsigned int nsid, unsigned long nlba_verify);
 extern int ns_refresh(namespace* ns, uint32_t id, ctrlr_t *ctrlr);
 extern bool ns_verify_enable(struct spdk_nvme_ns* ns, bool enable);
 extern int ns_cmd_io(uint8_t opcode,
                      namespace* ns,
-                     struct spdk_nvme_qpair *qpair,
+                     qpair_t *qpair,
                      void *buf,
                      size_t len,
                      uint64_t lba,
@@ -291,17 +363,18 @@ extern uint64_t ns_get_num_sectors(namespace* ns);
 extern int ns_fini(namespace* ns);
 
 extern char* log_buf_dump(const char* header, const void* buf, size_t len, size_t base);
-extern void log_cmd_dump(struct spdk_nvme_qpair* qpair, size_t count);
+extern void log_cmd_dump(qpair_t* qpair, size_t count);
 extern void log_cmd_dump_admin(ctrlr_t * ctrlr, size_t count);
 
 extern const char* cmd_name(uint8_t opc, int set);
 
-extern void intc_clear(struct spdk_nvme_qpair* q);
-extern bool intc_isset(struct spdk_nvme_qpair* q);
-extern void intc_mask(struct spdk_nvme_qpair* q);
-extern void intc_unmask(struct spdk_nvme_qpair* q);
+extern void intc_clear(qpair_t* q);
+extern bool intc_isset(qpair_t* q);
+extern void intc_mask(qpair_t* q);
+extern void intc_unmask(qpair_t* q);
 extern void* intc_lookup_ctrl(ctrlr_t * ctrlr);
 
+extern void timeval_init(void);
 extern void timeval_gettimeofday(struct timeval *tv);
 extern uint32_t timeval_to_us(struct timeval* t);
 

@@ -2,7 +2,7 @@
 #include "sim_common.h"
 #include "../../../spdk/lib/nvme/nvme_internal.h"
 
-void intc_clear(struct spdk_nvme_qpair* q)
+void intc_clear(struct spdk_nvme_qpair *q)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return;

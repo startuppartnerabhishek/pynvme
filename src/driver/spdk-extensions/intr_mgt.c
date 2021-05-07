@@ -289,7 +289,7 @@ void intc_fini(struct spdk_nvme_ctrlr *ctrlr)
   intc_info_release(ctrlr);
 }
 
-static uint16_t intc_get_vec(struct spdk_nvme_qpair* q)
+static uint16_t intc_get_vec(qpair_t* q)
 {
   struct spdk_nvme_ctrlr* ctrlr = q->ctrlr;
   intr_ctrl_t* intr_ctrl = ctrlr->pynvme_intc_ctrl;
@@ -301,7 +301,7 @@ static uint16_t intc_get_vec(struct spdk_nvme_qpair* q)
   return (q->intr_vector % intr_ctrl->max_vec_num);
 }
 
-void intc_clear(struct spdk_nvme_qpair* q)
+void intc_clear(qpair_t* q)
 {
   struct spdk_nvme_ctrlr* ctrlr = q->ctrlr;
   intr_ctrl_t* intr_ctrl = ctrlr->pynvme_intc_ctrl;

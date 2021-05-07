@@ -14,17 +14,24 @@ do {                                                                            
 #define DRVSIM_LOG_TO_FILE(_FILE_STAR_, _FMT_, ...)                                                                  \
 do {                                                                                            \
     fprintf(_FILE_STAR_, "%s:%u %s(): "_FMT_, __SHORTENED_FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__);   \
-    fflush(stdout);                                                                             \
+    fflush(_FILE_STAR_);                                                                             \
 } while (0)
 
 #define DRVSIM_LOG(_FMT_, ...)  DRVSIM_LOG_TO_FILE(stdout, _FMT_, ##__VA_ARGS__)
 
-#define DRVSIM_FATAL_ERROR(_FMT_, ...)  \
+#define DRVSIM_FATAL_ERROR(_FMT_, ...)      \
 do {                                        \
     DRVSIM_LOG(_FMT_, ##__VA_ARGS__);       \
     fflush(stdout);                         \
     fflush(stderr);                         \
     assert(false);                          \
+} while (0)
+
+#define DRVSIM_ASSERT(COND, _FMT_, ...)                 \
+do {                                                    \
+    if (!(COND)) {                                      \
+        DRVSIM_FATAL_ERROR("SIM SSERTION FAILED ---> " _FMT_, ##__VA_ARGS__);       \
+    }                                                   \
 } while (0)
 
 #define DRVSIM_NOT_IMPLEMENTED(_FMT_, ...) DRVSIM_FATAL_ERROR(_FMT_, ##__VA_ARGS__)

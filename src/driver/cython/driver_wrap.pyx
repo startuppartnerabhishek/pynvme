@@ -69,6 +69,8 @@ from cpython.exc cimport PyErr_CheckSignals
 # c driver
 cimport cdriver as d
 
+# global options
+from conftest import globalTestOptions
 
 # module informatoin
 __author__ = "Crane Chu"
@@ -80,7 +82,7 @@ __version__ = "2.3.2"
 _cTIMEOUT = 1000
 _timeout_happened = False
 cdef void timeout_driver_cb(void* cb_arg, d.ctrlr_t* ctrlr,
-                            d.qpair * qpair, unsigned short cid):
+                            d.qpair_t * qpair, unsigned short cid):
     _timeout_happened = True
     error_string = "drive timeout: qpair: %d, cid: %d" % \
         (d.qpair_get_id(qpair), cid)
@@ -1163,7 +1165,7 @@ cdef class Controller(object):
         _aer_resend = 0
         _aer_waitdone = 0
 
-        logging.debug("to reap %d admin commands" % expected)
+        logging.debug("to reap %d admin commands" % expected); sys.stdout.flush();
         # some admin commands need long timeout limit, like: format,
         signal.alarm(self._timeout_pynvme)
 
@@ -1741,7 +1743,7 @@ cdef class Qpair(object):
         iv (short): interrupt vector. Default: 0xffff, choose by driver
     """
 
-    cdef d.qpair * _qpair
+    cdef d.qpair_t * _qpair
     cdef Controller _nvme
 
     def __cinit__(self, Controller nvme,
@@ -2901,23 +2903,17 @@ def srand(seed):
     d.driver_srand(seed)
     random.seed(seed)
 
+def pen_common_connectivity_check(src, dst, count, return_this):
+    return d.pen_common_connectivity_check(src, dst, count, return_this)
 
 # module init, needs root privilege
-if os.geteuid() == 0:
+if os.geteuid() == 0 or globalTestOptions["mode"] == "SIM":
     # CTRL-c to exit
     signal.signal(signal.SIGINT, _interrupt_handler)
     # timeout
     signal.signal(signal.SIGALRM, _timeout_signal_handler)
 
     _reentry_flag_init()
-
-    # config runtime: disable ASLR, 8T drive, S3
-    subprocess.call('sudo ulimit -n 32000 2> /dev/null || true', shell=True)
-    subprocess.call('sudo sh -c "echo deep > /sys/power/mem_sleep" 2> /dev/null || true', shell=True)
-    subprocess.call('sudo sh -c "echo 0 > /proc/sys/kernel/randomize_va_space" 2> /dev/null || true', shell=True)
-
-    # spawn only limited data from parent process
-    _mp = multiprocessing.get_context("spawn")
 
     # init driver
     if d.driver_init() != 0:
@@ -2927,5 +2923,11 @@ if os.geteuid() == 0:
     # module fini
     atexit.register(d.driver_fini)
 
-def pen_common_connectivity_check(src, dst, count, return_this):
-    return d.pen_common_connectivity_check(src, dst, count, return_this)
+if os.geteuid() == 0:
+    # config runtime: disable ASLR, 8T drive, S3
+    subprocess.call('sudo ulimit -n 32000 2> /dev/null || true', shell=True)
+    subprocess.call('sudo sh -c "echo deep > /sys/power/mem_sleep" 2> /dev/null || true', shell=True)
+    subprocess.call('sudo sh -c "echo 0 > /proc/sys/kernel/randomize_va_space" 2> /dev/null || true', shell=True)
+
+    # spawn only limited data from parent process
+    _mp = multiprocessing.get_context("spawn")

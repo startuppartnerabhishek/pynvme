@@ -32,7 +32,7 @@
 
 
 cdef extern from "driver.h":
-    ctypedef struct qpair:
+    ctypedef struct qpair_t:
         pass
     ctypedef struct ctrlr_t:
         pass
@@ -94,7 +94,7 @@ cdef extern from "driver.h":
 
     ctypedef void(*cmd_cb_func)(void * cmd_cb_arg, const cpl * cpl)
     ctypedef void(*timeout_cb_func)(void * cb_arg, ctrlr_t * ctrlr,
-                                    qpair * qpair, unsigned short cid)
+                                    qpair_t * qpair, unsigned short cid)
 
     int driver_init()
     int driver_fini()
@@ -132,7 +132,7 @@ cdef extern from "driver.h":
     int nvme_wait_completion_admin(ctrlr_t * c)
     void nvme_cmd_cb_print_cpl(void * qpair, const cpl * cpl)
     int nvme_send_cmd_raw(ctrlr_t * c,
-                          qpair * qpair,
+                          qpair_t * qpair,
                           unsigned int cdw0,
                           unsigned int nsid,
                           void * buf, size_t len,
@@ -158,24 +158,24 @@ cdef extern from "driver.h":
                        unsigned int pvalue)
     void buffer_fini(void * buf)
 
-    qpair * qpair_create(ctrlr_t * c,
+    qpair_t * qpair_create(ctrlr_t * c,
                          unsigned int prio,
                          unsigned int depth,
                          bint ien,
                          unsigned short iv)
-    int qpair_wait_completion(qpair * q, unsigned int max_completions)
-    unsigned short qpair_get_latest_cid(qpair * q, ctrlr_t* c)
-    unsigned int qpair_get_latest_latency(qpair * q, ctrlr_t* c)
+    int qpair_wait_completion(qpair_t * q, unsigned int max_completions)
+    unsigned short qpair_get_latest_cid(qpair_t * q, ctrlr_t* c)
+    unsigned int qpair_get_latest_latency(qpair_t * q, ctrlr_t* c)
 
-    int qpair_get_id(qpair * q)
-    int qpair_free(qpair * q)
+    int qpair_get_id(qpair_t * q)
+    int qpair_free(qpair_t * q)
 
     namespace * ns_init(ctrlr_t * c, unsigned int nsid, unsigned long nlba_verify)
     int ns_refresh(namespace * ns, unsigned int nsid, ctrlr_t * c)
     bint ns_verify_enable(namespace * ns, bint enable)
     int ns_cmd_io(unsigned char opcode,
                   namespace * ns,
-                  qpair * qpair,
+                  qpair_t * qpair,
                   void * buf,
                   size_t len,
                   unsigned long lba,
@@ -191,20 +191,20 @@ cdef extern from "driver.h":
     int ns_fini(namespace * ns)
 
     int ioworker_entry(namespace* ns,
-                       qpair* qpair,
+                       qpair_t* qpair,
                        ioworker_args* args,
                        ioworker_rets* rets)
 
     char* log_buf_dump(const char * header, const void * buf, size_t len, size_t base)
-    void log_cmd_dump(qpair * qpair, size_t count)
+    void log_cmd_dump(qpair_t * qpair, size_t count)
     void log_cmd_dump_admin(ctrlr_t * ctrlr, size_t count)
 
     const char* cmd_name(unsigned char opc, int set)
 
-    void intc_clear(qpair * q)
-    bint intc_isset(qpair * q)
-    void intc_mask(qpair * q)
-    void intc_unmask(qpair * q)
+    void intc_clear(qpair_t * q)
+    bint intc_isset(qpair_t * q)
+    void intc_mask(qpair_t * q)
+    void intc_unmask(qpair_t * q)
 
     void driver_srand(unsigned int seed)
     unsigned int driver_io_qpair_count(ctrlr_t* c)
