@@ -108,7 +108,7 @@ uint32_t spdk_nvme_ns_get_max_io_xfer_size(struct spdk_nvme_ns *ns)
 
 int ns_cmd_io(uint8_t opcode,
               struct spdk_nvme_ns* ns,
-              struct spdk_nvme_qpair* qpair,
+              qpair_t* qpair,
               void* buf,
               size_t len,
               uint64_t lba,

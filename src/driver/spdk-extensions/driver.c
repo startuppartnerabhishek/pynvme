@@ -40,48 +40,6 @@ extern uint64_t* g_driver_config_ptr;
 extern bool g_driver_crc32_memory_enough;
 static uint64_t* g_driver_io_token_ptr = NULL;
 
-////module: timeval
-///////////////////////////////
-
-static struct timespec tv_diff;
-
-
-static void timeval_init(void)
-{
-  struct timespec ts;
-  struct timeval tv;
-
-  gettimeofday(&tv, NULL);
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-
-  tv_diff.tv_sec = tv.tv_sec-ts.tv_sec-1;
-  tv_diff.tv_nsec = (1<<30)+tv.tv_usec*1000-ts.tv_nsec;
-}
-
-
-uint32_t timeval_to_us(struct timeval* t)
-{
-  return t->tv_sec*US_PER_S + t->tv_usec;
-}
-
-
-void timeval_gettimeofday(struct timeval *tv)
-{
-  struct timespec ts;
-
-  assert(tv != NULL);
-
-  // gettimeofday is affected by NTP and etc, so use clock_gettime
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  tv->tv_sec = ts.tv_sec+tv_diff.tv_sec;
-  tv->tv_usec = (ts.tv_nsec+tv_diff.tv_nsec)>>10;
-  if (tv->tv_usec > US_PER_S)
-  {
-    tv->tv_sec += tv->tv_usec/US_PER_S;
-    tv->tv_usec = tv->tv_usec%US_PER_S;
-  }
-}
-
 
 ////module: buffer
 ///////////////////////////////
@@ -509,7 +467,7 @@ uint64_t crc32_skip_uncorr(struct spdk_nvme_ns* ns, uint64_t slba, uint32_t nlba
 static_assert(sizeof(struct cmd_log_entry_t) == 128, "cacheline aligned");
 static_assert(sizeof(struct cmd_log_table_t)%64 == 0, "cacheline aligned");
 
-static void _cmdlog_uname(struct spdk_nvme_qpair* q, char* name, uint32_t len)
+static void _cmdlog_uname(qpair_t* q, char* name, uint32_t len)
 {
   assert(q != NULL);
   snprintf(name, len, "cmdlog_table_%s_%d_%d_%s",
@@ -518,7 +476,7 @@ static void _cmdlog_uname(struct spdk_nvme_qpair* q, char* name, uint32_t len)
 }
 
 
-void cmdlog_init(struct spdk_nvme_qpair* q)
+void cmdlog_init(qpair_t* q)
 {
   char cmdlog_name[64];
 
@@ -533,7 +491,7 @@ void cmdlog_init(struct spdk_nvme_qpair* q)
 }
 
 
-void cmdlog_free(struct spdk_nvme_qpair* q)
+void cmdlog_free(qpair_t* q)
 {
   char cmdlog_name[64];
 
@@ -744,7 +702,7 @@ void cmdlog_cmd_cpl(struct nvme_request* req, struct spdk_nvme_cpl* cpl)
 
 
 // for spdk internel ues: nvme_qpair_submit_request
-void cmdlog_add_cmd(struct spdk_nvme_qpair* qpair, struct nvme_request* req)
+void cmdlog_add_cmd(qpair_t* qpair, struct nvme_request* req)
 {
   struct cmd_log_table_t* log_table = qpair->pynvme_cmdlog;
   assert(log_table != NULL);
@@ -981,7 +939,7 @@ int nvme_fini(ctrlr_t* ctrlr)
   if (spdk_process_is_primary())
   {
     // io qpairs should all be deleted before closing master controller
-    struct spdk_nvme_qpair  *qpair;
+    qpair_t  *qpair;
     TAILQ_FOREACH(qpair, &ctrlr->active_io_qpairs, tailq)
     {
       qpair_free(qpair);
@@ -1091,7 +1049,7 @@ int nvme_wait_completion_admin(ctrlr_t * ctrlr)
 
 
 int nvme_send_cmd_raw(ctrlr_t * ctrlr,
-                      struct spdk_nvme_qpair *qpair,
+                      qpair_t *qpair,
                       unsigned int cdw0,
                       unsigned int nsid,
                       void* buf, size_t len,
@@ -1151,13 +1109,13 @@ struct spdk_nvme_ns* nvme_get_ns(ctrlr_t * ctrlr,
 ////module: qpair
 ///////////////////////////////
 
-struct spdk_nvme_qpair *qpair_create(ctrlr_t * ctrlr,
+qpair_t *qpair_create(ctrlr_t * ctrlr,
                                      unsigned int prio,
                                      unsigned int depth,
                                      bool ien,
                                      unsigned short iv)
 {
-  struct spdk_nvme_qpair* qpair;
+  qpair_t* qpair;
   struct spdk_nvme_io_qpair_opts opts;
 
   //user options
@@ -1183,7 +1141,7 @@ struct spdk_nvme_qpair *qpair_create(ctrlr_t * ctrlr,
   return qpair;
 }
 
-int qpair_wait_completion(struct spdk_nvme_qpair *qpair, uint32_t max_completions)
+int qpair_wait_completion(qpair_t *qpair, uint32_t max_completions)
 {
   int rc = 0;
 
@@ -1200,14 +1158,14 @@ int qpair_wait_completion(struct spdk_nvme_qpair *qpair, uint32_t max_completion
   return rc;
 }
 
-int qpair_free(struct spdk_nvme_qpair* q)
+int qpair_free(qpair_t* q)
 {
   assert(q != NULL);
   SPDK_DEBUGLOG(SPDK_LOG_NVME, "free qpair: %d\n", q->id);
   return spdk_nvme_ctrlr_free_io_qpair(q);
 }
 
-uint16_t qpair_get_latest_cid(struct spdk_nvme_qpair* q,
+uint16_t qpair_get_latest_cid(qpair_t* q,
                               ctrlr_t* c)
 {
   struct cmd_log_table_t* log_table;
@@ -1223,7 +1181,7 @@ uint16_t qpair_get_latest_cid(struct spdk_nvme_qpair* q,
   return log_table->latest_cid;
 }
 
-uint32_t qpair_get_latest_latency(struct spdk_nvme_qpair* q,
+uint32_t qpair_get_latest_latency(qpair_t* q,
                                   ctrlr_t* c)
 {
   struct cmd_log_table_t* log_table;
@@ -1421,7 +1379,7 @@ int nvme_set_ns(struct spdk_nvme_ctrlr *ctrlr)
 
 int ns_cmd_io(uint8_t opcode,
               struct spdk_nvme_ns* ns,
-              struct spdk_nvme_qpair* qpair,
+              qpair_t* qpair,
               void* buf,
               size_t len,
               uint64_t lba,
@@ -1557,7 +1515,7 @@ char* log_buf_dump(const char* header, const void* buf, size_t len, size_t base)
   return dump_buf;
 }
 
-void log_cmd_dump(struct spdk_nvme_qpair* qpair, size_t count)
+void log_cmd_dump(qpair_t* qpair, size_t count)
 {
   struct cmd_log_table_t* cmdlog = qpair->pynvme_cmdlog;
   struct cmd_log_entry_t* table = cmdlog->table;
@@ -1661,7 +1619,7 @@ static void* rpc_server(void* args)
 
 
 static void rpc_list_qpair_content(struct spdk_json_write_ctx *w,
-                                   struct spdk_nvme_qpair* q)
+                                   qpair_t* q)
 {
   uint32_t os = nvme_transport_qpair_outstanding_count(q);
   int8_t mn[SPDK_NVME_CTRLR_MN_LEN+1];
@@ -1703,7 +1661,7 @@ rpc_list_all_qpair(struct spdk_jsonrpc_request *request,
     rpc_list_qpair_content(w, e->ctrlr->adminq);
 
     // io qpairs
-    struct spdk_nvme_qpair  *q;
+    qpair_t  *q;
     TAILQ_FOREACH(q, &e->ctrlr->active_io_qpairs, tailq)
     {
       rpc_list_qpair_content(w, q);
@@ -1737,7 +1695,7 @@ rpc_get_iostat(struct spdk_jsonrpc_request *request,
   STAILQ_FOREACH(e, &g_controllers, next)
   {
     // io qpairs
-    struct spdk_nvme_qpair  *q;
+    qpair_t  *q;
     TAILQ_FOREACH(q, &e->ctrlr->active_io_qpairs, tailq)
     {
       iops += q->pynvme_io_in_second;
@@ -1762,7 +1720,7 @@ rpc_get_cmdlog(struct spdk_jsonrpc_request *request,
                const struct spdk_json_val *params)
 {
   size_t count;
-  struct spdk_nvme_qpair* q;
+  qpair_t* q;
   struct spdk_json_write_ctx *w;
 
   if (params == NULL)
@@ -1974,8 +1932,7 @@ int driver_init(void)
   driver_init_config();
   driver_init_token();
 
-  // init timer
-  timeval_init();
+  driver_init_common();
 
   return 0;
 }

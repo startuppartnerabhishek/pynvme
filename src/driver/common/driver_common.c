@@ -7,6 +7,48 @@
 uint64_t* g_driver_config_ptr = NULL;
 bool g_driver_crc32_memory_enough = false;
 
+////module: timeval
+///////////////////////////////
+
+static struct timespec tv_diff;
+
+
+void timeval_init(void)
+{
+  struct timespec ts;
+  struct timeval tv;
+
+  gettimeofday(&tv, NULL);
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+
+  tv_diff.tv_sec = tv.tv_sec-ts.tv_sec-1;
+  tv_diff.tv_nsec = (1<<30)+tv.tv_usec*1000-ts.tv_nsec;
+}
+
+
+uint32_t timeval_to_us(struct timeval* t)
+{
+  return t->tv_sec*US_PER_S + t->tv_usec;
+}
+
+
+void timeval_gettimeofday(struct timeval *tv)
+{
+  struct timespec ts;
+
+  assert(tv != NULL);
+
+  // gettimeofday is affected by NTP and etc, so use clock_gettime
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  tv->tv_sec = ts.tv_sec+tv_diff.tv_sec;
+  tv->tv_usec = (ts.tv_nsec+tv_diff.tv_nsec)>>10;
+  if (tv->tv_usec > US_PER_S)
+  {
+    tv->tv_sec += tv->tv_usec/US_PER_S;
+    tv->tv_usec = tv->tv_usec%US_PER_S;
+  }
+}
+
 
 uint64_t driver_config(uint64_t cfg_word)
 {
@@ -34,6 +76,14 @@ void driver_srand(unsigned int seed)
 {
   SPDK_DEBUGLOG(SPDK_LOG_NVME, "set random seed: 0x%x\n", seed);
   srandom(seed);
+}
+
+int driver_init_common(void)
+{
+  // init timer
+  timeval_init();
+
+  return 0;
 }
 
 int pen_common_connectivity_check(char *src, char *dst, unsigned int count, int return_this)
@@ -176,7 +226,7 @@ const char* cmd_name(uint8_t opc, int set)
   }
 }
 
-int qpair_get_id(struct spdk_nvme_qpair* q)
+int qpair_get_id(qpair_t* q)
 {
   // q NULL is admin queue
   return q ? q->id : 0;
