@@ -5,6 +5,12 @@
 #include "driver.h"
 #include "intr_mgt.h"
 
+/***** general defines *************************/
+
+#define SIM_IS_ADMINQ(_A_QUEUE_) (((_A_QUEUE_)->parent_controller->adminq) == (_A_QUEUE_))
+
+/**** </end> general defines ****************/
+
 /********************* externs, types and declarations ******************************/
 
 /*** global sim config ***********/
@@ -25,9 +31,12 @@ typedef struct sim_config_s {
 } sim_config_t;
 
 extern sim_config_t g_sim_config;
+int sim_qpair_process_completions(qpair_t *q, unsigned int max);
 
-void sim_process_completion(struct sim_cmd_log_entry_s *completed_cmd_log);
-
+/* logging utility functions */
+void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry);
+void log_ctrlr_completion(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry);
+void log_ctrlr_completion_buf_id_controller(sim_cmd_log_entry_t *cmd_log_entry);
 
 /********************* </end> externs, types and declarations ***********************/
 

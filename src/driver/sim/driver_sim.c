@@ -43,7 +43,6 @@ static void init_sim_config(char *json_string);
 static void drvsim_handle_completion(void *cb_args, nvme_ctrlr_completion_t *cmpl);
 static qpair_t *sim_allocate_qpair(ctrlr_t *ctrlr, bool is_adminq);
 static void sim_free_qpair(qpair_t *q);
-static int sim_qpair_process_completions(qpair_t *q, unsigned int max);
 
 ////module: qpair
 ///////////////////////////////
@@ -186,6 +185,8 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
 
     qpair->log_entry_count++;
 
+    log_ctrlr_cmd(qpair, e);
+
     DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, log entry count %u, completions collected %u\n",
         qpair, qpair->commands_sent, qpair->responses_received, qpair->log_entry_count, qpair->completions_collected);
 
@@ -230,10 +231,7 @@ int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe)
 
     pthread_mutex_unlock(&qpair->lock);
 
-    DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, "
-            "log entry count %u, completions collected %u\n",
-        qpair, qpair->commands_sent, qpair->responses_received,
-        qpair->log_entry_count, qpair->completions_collected);
+    log_ctrlr_completion(completion_ctx->qpair, completion_ctx);
 
     return 0;
 }
@@ -319,56 +317,6 @@ static qpair_t *sim_allocate_qpair(ctrlr_t *ctrlr, bool is_adminq)
     }
 
     return q;
-}
-
-static int sim_qpair_process_completions(qpair_t *q, unsigned int max)
-{
-    int processed = 0;
-    int scanned = 0;
-    DRVSIM_ASSERT((q), "q cannot be NULL\n");
-    sim_cmd_log_entry_t *e = q->log_list_head;
-    const unsigned int log_entry_count = q->log_entry_count;
-
-    pthread_mutex_lock(&q->lock);
-
-    while (processed < max && scanned < log_entry_count) {
-        scanned++;
-
-        DRVSIM_ASSERT((e), "qpair %p has unexpected NULL cmd entry\n", q);
-
-        if (e->is_completed) {
-            if (!e->is_processed) {
-                // whatever processing means, goes here -> log it, maybe?
-                e->is_processed = true;
-                processed++;
-                q->completions_collected++;
-
-                if (g_sim_config.log_dump_adminq_completion_len) {
-                    DRVSIM_LOG("commmand:\n");
-                    sim_hex_dump(&e->cmd, sizeof(e->cmd));
-                    DRVSIM_LOG("completion:\n");
-                    sim_hex_dump(&e->cpl, sizeof(e->cpl));
-                    if (e->response_buf && e->response_buf_len) {
-                        DRVSIM_LOG("response buffer:\n");
-                        sim_hex_dump(e->response_buf,
-                            e->response_buf_len > g_sim_config.log_dump_adminq_completion_len ?
-                                g_sim_config.log_dump_adminq_completion_len : e->response_buf_len);
-                    }
-                }
-            }
-        }
-
-        e = e->next;
-    }
-
-    if (processed) {
-        DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, log entry count %u, completions collected %u\n",
-            q, q->commands_sent, q->responses_received, q->log_entry_count, q->completions_collected);
-    }
-
-    pthread_mutex_unlock(&q->lock);
-
-    return processed;
 }
 
 static void sim_free_qpair(qpair_t *q)
