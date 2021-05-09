@@ -5,7 +5,7 @@
 
 #include "spdk/nvme_spec.h"
 
-#define LOG_TYPE_BANNER(__STRUCTNAME__, __CHECKPOINT__) DRVSIM_LOG("<<<<<<<<<<<<<<< %s (%s) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n", __STRUCTNAME__, __CHECKPOINT__)
+#define LOG_TYPE_BANNER(__STRUCTNAME__, __CHECKPOINT__) DRVSIM_LOG("<<<<<<<<<< %s (%s) >>>>>>>>>>>>>>>\n", __STRUCTNAME__, __CHECKPOINT__)
 
 #define LOG_FIELD_LONGINT(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__) DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s = 0x%lx\n", __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__, (__STRUCTPTR__)->__FIELDNAME__) 
 
