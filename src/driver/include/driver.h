@@ -134,9 +134,10 @@ typedef struct sim_nvme_qpair_s {
 } qpair_t;
 
 typedef struct sim_nvme_ctrlr_s {
-    void        *ctrlr_api_handle;
-    qpair_t     *adminq;
-    qpair_t     *other_queues_list;
+    void            *ctrlr_api_handle;
+    qpair_t         *adminq;
+    qpair_t         *other_queues_list;
+    pthread_mutex_t lock;
 } ctrlr_t;
 
 typedef ctrlr_t pcie_t; // in SIM MODE, a controller also provides PCIE access
@@ -370,10 +371,6 @@ extern void log_cmd_dump_admin(ctrlr_t * ctrlr, size_t count);
 
 extern const char* cmd_name(uint8_t opc, int set);
 
-extern void intc_clear(qpair_t* q);
-extern bool intc_isset(qpair_t* q);
-extern void intc_mask(qpair_t* q);
-extern void intc_unmask(qpair_t* q);
 extern void* intc_lookup_ctrl(ctrlr_t * ctrlr);
 
 extern void timeval_init(void);

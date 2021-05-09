@@ -1,14 +1,18 @@
 #include <stdarg.h>
 
-#include "driver.h"
 #include "sim_common.h"
+#include "sim_types.h"
 #include "../../../spdk/lib/nvme/nvme_internal.h"
 
 #include "client_interface/agent_interface.h"
 
 #include "cJSON.h"
 
-#define MAX_STRING_LEN  1024
+
+struct spdk_log_flag SPDK_LOG_NVME = {
+  .name = "nvme",
+  .enabled = false,
+};
 
 typedef struct sim_config_item_s {
     char *key_name;
@@ -18,29 +22,8 @@ typedef struct sim_config_item_s {
 
 #define CONF_FILE_PARSE_ENTRY(__field__, __is_string__) {#__field__, __is_string__, &g_sim_config.__field__}
 
-typedef struct sim_config_s { 
-    char agent_runtime_rootpath[MAX_STRING_LEN];
-    unsigned int dev_no;
-    unsigned int vf_no;
-    unsigned int sq_size;
-    unsigned int cq_size;
-    unsigned int nr_cmds;
-    unsigned int log_register_reads;
-    unsigned int log_register_writes;
-    unsigned int log_buf_alloc_free;
-    unsigned int max_log_entries_per_qpair;
-    unsigned int log_dump_adminq_completion_len;
-    ctrlr_t *p_default_controller;
-} sim_config_t;
-
-struct spdk_log_flag SPDK_LOG_NVME = {
-  .name = "nvme",
-  .enabled = false,
-};
-
 /*** global config *****/
-static sim_config_t g_sim_config;
-
+sim_config_t g_sim_config;
 
 static sim_config_item_t g_simcfg_file_items[] = {
     CONF_FILE_PARSE_ENTRY(agent_runtime_rootpath, true),
@@ -625,29 +608,6 @@ int ns_fini(struct spdk_nvme_ns* ns)
   return DRVSIM_RETCODE_FAILURE;
 }
 
-////module: log
-///////////////////////////////
-
-char *log_buf_dump(const char* header, const void* buf, size_t len, size_t base)
-{
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return NULL;
-}
-
-void log_cmd_dump(qpair_t* qpair, size_t count)
-{
-  // TODO/TBD
-  DRVSIM_TBD("not implemented\n");
-  return;
-}
-
-void log_cmd_dump_admin(ctrlr_t* ctrlr, size_t count)
-{
-  // TODO/TBD
-  DRVSIM_TBD("not implemented\n");
-  return;
-}
-
 void nvme_bar_remap(ctrlr_t* ctrlr)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
@@ -841,19 +801,19 @@ static void init_sim_config(char *json_string)
 
 ctrlr_t* nvme_init(char * traddr, unsigned int port)
 {
-    ctrlr_t *ctrl_opaque_handle = NULL;
+    ctrlr_t *ctrlr_opaque_handle = NULL;
 
     DRVSIM_LOG("[ENTERING] traddr %s, port %u\n", traddr, port);
 
     init_sim_config(traddr);
 
-    ctrl_opaque_handle = (ctrlr_t *)malloc(sizeof(ctrlr_t));
+    ctrlr_opaque_handle = (ctrlr_t *)malloc(sizeof(ctrlr_t));
 
-    DRVSIM_ASSERT((ctrl_opaque_handle), "opaque handle alloc failed\n");
+    DRVSIM_ASSERT((ctrlr_opaque_handle), "opaque handle alloc failed\n");
 
-    memset(ctrl_opaque_handle, 0, sizeof(ctrlr_t));
+    memset(ctrlr_opaque_handle, 0, sizeof(ctrlr_t));
 
-    ctrl_opaque_handle->ctrlr_api_handle =
+    ctrlr_opaque_handle->ctrlr_api_handle =
         create_driver(
             (const char *)&g_sim_config.agent_runtime_rootpath,
             g_sim_config.dev_no,
@@ -862,17 +822,19 @@ ctrlr_t* nvme_init(char * traddr, unsigned int port)
             g_sim_config.cq_size,
             g_sim_config.nr_cmds);
 
-    if (!ctrl_opaque_handle->ctrlr_api_handle) {
-        free(ctrl_opaque_handle);
+    if (!ctrlr_opaque_handle->ctrlr_api_handle) {
+        free(ctrlr_opaque_handle);
         return NULL;
     }
 
-    g_sim_config.p_default_controller = ctrl_opaque_handle;
+    g_sim_config.p_default_controller = ctrlr_opaque_handle;
+
+    pthread_mutex_init(&ctrlr_opaque_handle->lock, NULL);
 
     DRVSIM_LOG("Returning Driver-API handle %p (wraps api_handle %p)\n",
-        ctrl_opaque_handle, ctrl_opaque_handle->ctrlr_api_handle);
+        ctrlr_opaque_handle, ctrlr_opaque_handle->ctrlr_api_handle);
 
-    return ctrl_opaque_handle;
+    return ctrlr_opaque_handle;
 }
 
 int nvme_fini(ctrlr_t* ctrlr)
@@ -884,6 +846,8 @@ int nvme_fini(ctrlr_t* ctrlr)
     if (g_sim_config.p_default_controller == ctrlr) {
         g_sim_config.p_default_controller = NULL;
     }
+
+    pthread_mutex_destroy(&ctrlr->lock);
 
     free(ctrlr);
 

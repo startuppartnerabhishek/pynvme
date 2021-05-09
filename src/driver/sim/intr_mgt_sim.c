@@ -1,5 +1,5 @@
-#include "intr_mgt.h"
 #include "sim_common.h"
+#include "sim_types.h"
 #include "../../../spdk/lib/nvme/nvme_internal.h"
 
 void intc_clear(struct spdk_nvme_qpair *q)
