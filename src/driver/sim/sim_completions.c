@@ -29,8 +29,10 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
     }
 
     if (is_adminq) {
+
         switch (cmd_log->cmd.opc) {
             case SPDK_NVME_OPC_IDENTIFY:
+                DRVSIM_LOG("IDENTIFY completion\n");
                 switch(cmd_log->cmd.cdw10) {
                     
                     case SPDK_NVME_IDENTIFY_CTRLR:
@@ -47,10 +49,15 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
                 } /* switch cdw10 */
             break;
 
+            case SPDK_NVME_OPC_SET_FEATURES:
+                DRVSIM_NOT_IMPLEMENTED_BENIGN("SET Features completion - processing not implemented\n");
+                break;
+
             default:
                 DRVSIM_NOT_IMPLEMENTED_BENIGN("ADMIN cmd %u has no special handling\n",
                         cmd_log->cmd.opc);
-        }
+        } /* switch OPC */
+
     } else {
         switch (cmd_log->cmd.opc) {
             default:
@@ -135,7 +142,7 @@ static void sim_process_completion_identify_controller(struct sim_cmd_log_entry_
 static void sim_process_completion_identify_namespace(struct sim_cmd_log_entry_s *cmd_log)
 {
     uint32_t ns_id = cmd_log->cmd.nsid;
-    sim_nvme_ns_t *n = &cmd_log->qpair->parent_controller->namespaces[ns_id];
+    sim_nvme_ns_t *n = &cmd_log->qpair->parent_controller->namespaces[ns_id - 1];
     struct spdk_nvme_ns_data *resp = (struct spdk_nvme_ns_data *)cmd_log->response_buf;
 
     if (spdk_nvme_cpl_is_error(&cmd_log->cpl)) {
@@ -148,6 +155,8 @@ static void sim_process_completion_identify_namespace(struct sim_cmd_log_entry_s
             cmd_log->response_buf_len, sizeof(struct spdk_nvme_ns_data));
             return;
     }
+
+    log_ctrlr_completion_buf_id_namespace(cmd_log);
 
     n->state = SIM_NS_STATE_IDENTIFY_COMPLETE;
 

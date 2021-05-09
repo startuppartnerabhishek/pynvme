@@ -43,7 +43,7 @@ static void init_sim_config(char *json_string);
 static void drvsim_handle_completion(void *cb_args, nvme_ctrlr_completion_t *cmpl);
 static qpair_t *sim_allocate_qpair(ctrlr_t *ctrlr, bool is_adminq);
 static void sim_free_qpair(qpair_t *q);
-static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_id);
+static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_array_idx);
 static void wait_for_all_adminq_completions(ctrlr_t *ctrlr);
 static int nvme_send_cmd_raw_internal(
                         ctrlr_t* ctrlr,
@@ -128,10 +128,10 @@ static void wait_for_all_adminq_completions(ctrlr_t *ctrlr)
     sim_qpair_process_completions(adminq, DRVSIM_VERY_LARGE_NUMBER);
 }
 
-static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_id)
+static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_array_idx)
 {
     int ret;
-    sim_nvme_ns_t *n = &ctrlr->namespaces[ns_id];
+    sim_nvme_ns_t *n = &ctrlr->namespaces[ns_array_idx];
     void *buf;
     uint64_t phys_addr;
     struct spdk_nvme_cmd cmd = {0};
@@ -143,13 +143,13 @@ static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_id)
     /* what if we are racing with a completion for this namespace entry? */
 
     n->parent_controller = ctrlr;
-    n->id = ns_id;
+    n->id = ns_array_idx + 1;
     n->state = SIM_NS_STATE_CREATED;
 
     cmd.opc = SPDK_NVME_OPC_IDENTIFY;
     cmd.cdw10 = SPDK_NVME_IDENTIFY_NS;
 
-    ret = nvme_send_cmd_raw(ctrlr, NULL, cmd_as_arr[0], ns_id, buf, buf_size, cmd.cdw10,
+    ret = nvme_send_cmd_raw(ctrlr, NULL, cmd_as_arr[0], n->id, buf, buf_size, cmd.cdw10,
                         cmd.cdw11, cmd.cdw12, cmd.cdw13, cmd.cdw14, cmd.cdw15, NULL, NULL);
 
     if (DRVSIM_RETCODE_SUCCESS != ret) {
@@ -190,7 +190,7 @@ int nvme_set_ns(ctrlr_t *ctrlr)
         }
     }
 
-    DRVSIM_LOG("ctrlr %p, %u namespace(s) identified, %u success", ctrlr, nn_count, success);
+    DRVSIM_LOG("ctrlr %p, %u namespace(s) identified, %u success\n", ctrlr, nn_count, success);
 
     return ret;
 }
@@ -259,8 +259,8 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
     e->response_buf_len = len;
     e->free_buf_on_completion = free_buf_on_completion_processing;
 
-    DRVSIM_LOG("For qp %p, adding cmd entry for opc %u, cid 0x%x - expect callback with ctx %p\n",
-                    qpair, e->cmd.opc, e->cmd.cid, e);    
+    DRVSIM_LOG("For qp %p, adding cmd entry for opc %u, cid 0x%x - expect callback to fn %p with ctx %p\n",
+                    qpair, e->cmd.opc, e->cmd.cid, cb_fn, e);    
 
     pthread_mutex_lock(&qpair->lock);
 
@@ -520,8 +520,8 @@ static int nvme_send_cmd_raw_internal(
     DRVSIM_ASSERT((ctrlr && ctrlr->ctrlr_api_handle), "invalid ctrlr %p or uninitialized api handle\n", ctrlr);
 
     DRVSIM_LOG("ENTERED with ctrlr %p, qpair %p, buf %p of len %lu, cdw0 0x%08x, "
-                    "nsid 0x%08x, cdw10 = 0x%08x, cb_args %p\n", ctrlr, qpair,
-                    buf, len, cdw0, nsid, cdw10, cb_arg);
+                    "nsid 0x%08x, cdw10 = 0x%08x, cb_fn %p, cb_args %p\n", ctrlr, qpair,
+                    buf, len, cdw0, nsid, cdw10, cb_fn, cb_arg);
 
     if (qpair) {
         DRVSIM_NOT_IMPLEMENTED("qpair commands are not implemented\n");

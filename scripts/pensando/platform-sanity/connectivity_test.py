@@ -51,9 +51,34 @@ def test_driver_common_reachability():
 
     logging.info("test_driver_common_reachability: test completed SUCCESSFULLY =======================")
 
-def test_nvme_identify_controller(nvme0):
+def test_nvme_identify_controller(pcie):
+    def nvme_custom_basic_init(nvme0):
+        logging.info("user defined custom nvme init")
+
+        nvme0[0x14] = 0
+        while not (nvme0[0x1c]&0x1) == 0: pass
+
+        # 3. set admin queue registers
+        nvme0.init_adminq()
+
+        # 4. set register cc
+        nvme0[0x14] = 0x00460000
+
+        # 5. enable cc.en
+        nvme0[0x14] = 0x00460001
+
+        # 6. wait csts.rdy to 1
+        while not (nvme0[0x1c]&0x1) == 1: pass
+
+        # 7. identify controller
+        nvme0.identify(driverIntfObj.Buffer(4096)).waitdone()
+
+        # 8. create and identify all namespace
+        nvme0.init_ns()
+
     logging.info("STARTED TEST test_nvme_identify_controller with nvme0 =========================")
-    logging.info(nvme0)
-    nvme0.identify(d.Buffer(4096)).waitdone()
+    logging.info(pcie)
+
+    nvme0 = driverIntfObj.Controller(pcie, nvme_init_func=nvme_custom_basic_init)
 
     logging.info("test_nvme_identify_controller: test completed SUCCESSFULLY =======================")
