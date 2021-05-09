@@ -1,3 +1,5 @@
+#include <uuid/uuid.h>
+
 #include "sim_common.h"
 #include "sim_types.h"
 
@@ -5,13 +7,15 @@
 
 #define LOG_TYPE_BANNER(__STRUCTNAME__, __CHECKPOINT__) DRVSIM_LOG("<<<<<<<<<<<<<<< %s (%s) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n", __STRUCTNAME__, __CHECKPOINT__)
 
+#define LOG_FIELD_LONGINT(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__) DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s = 0x%lx\n", __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__, (__STRUCTPTR__)->__FIELDNAME__) 
+
 #define LOG_FIELD_INT(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__) DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s = 0x%x\n", __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__, (__STRUCTPTR__)->__FIELDNAME__)
 
 #define LOG_FIELD_HEX(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__)                                                    \
 do {                                                                                                                    \
-    DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s >>>>>>>>>>\n", __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__);      \
+    DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s >>>>>>>>>>\n", __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__);   \
     sim_hex_dump(&((__STRUCTPTR__)->__FIELDNAME__), sizeof((__STRUCTPTR__)->__FIELDNAME__));                            \
-} while (0);
+} while (0)
 
 ////module: log
 ///////////////////////////////
@@ -44,9 +48,9 @@ void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry)
     DRVSIM_LOG("ctrlr %p is sending command on %s qp %p\n",
         qp->parent_controller, is_adminq ? "ADMIN" : "IO", qp);
 
-    DRVSIM_LOG("Command opc %s (%u), fuse %u, cid 0x%x\n",
+    DRVSIM_LOG("Command opc %s (%u), fuse %u, cid 0x%x, nsid %u, cdw10 %u\n",
         cmd_name_as_string, cmd_log_entry->cmd.opc,
-        cmd_log_entry->cmd.fuse, cmd_log_entry->cmd.cid);
+        cmd_log_entry->cmd.fuse, cmd_log_entry->cmd.cid, cmd_log_entry->cmd.nsid, cmd_log_entry->cmd.cdw10);
 
     sim_hex_dump(&cmd_log_entry->cmd, sizeof(cmd_log_entry->cmd));
  
@@ -107,6 +111,27 @@ void log_ctrlr_completion_buf_id_controller(sim_cmd_log_entry_t *cmd_log_entry)
     LOG_FIELD_HEX(resp, subnqn, "Subsystem NQN");
 
     LOG_TYPE_BANNER("Idenitfy Controller Response", "END");
+
+    return;
+}
+
+void log_ctrlr_completion_buf_id_namespace(sim_cmd_log_entry_t *cmd_log_entry)
+{
+    struct spdk_nvme_ns_data *resp = cmd_log_entry->response_buf;
+    char decoded_nguid[UUID_STR_LEN] = {0};
+
+    LOG_TYPE_BANNER("Idenitfy Namepsace Response", "START");
+
+    LOG_FIELD_LONGINT(resp, nsze, "Size");
+    LOG_FIELD_LONGINT(resp, ncap, "Capacity");
+    LOG_FIELD_LONGINT(resp, nuse, "Utilization");
+    LOG_FIELD_HEX(resp, nguid, "NGUN - Namespace Globally Unique ID");
+
+    uuid_unparse((unsigned char *)&resp->nguid[0], decoded_nguid);
+
+    DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">>>> decoded nguid = %s\n", decoded_nguid);
+
+    LOG_TYPE_BANNER("Idenitfy Namespace Response", "END");
 
     return;
 }

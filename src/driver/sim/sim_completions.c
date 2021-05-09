@@ -4,6 +4,7 @@
 
 static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log);
 static void sim_process_completion_identify_controller(struct sim_cmd_log_entry_s *cmd_log);
+static void sim_process_completion_identify_namespace(struct sim_cmd_log_entry_s *cmd_log);
 
 static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
 {
@@ -30,7 +31,20 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
     if (is_adminq) {
         switch (cmd_log->cmd.opc) {
             case SPDK_NVME_OPC_IDENTIFY:
-                sim_process_completion_identify_controller(cmd_log);
+                switch(cmd_log->cmd.cdw10) {
+                    
+                    case SPDK_NVME_IDENTIFY_CTRLR:
+                        sim_process_completion_identify_controller(cmd_log);
+                        break;
+
+                    case SPDK_NVME_IDENTIFY_NS:
+                        sim_process_completion_identify_namespace(cmd_log);
+                        break;
+
+                    default:
+                        DRVSIM_LOG("do not know how to process cdw10 = %u for OPC IDENTIFY (6)\n",
+                            cmd_log->cmd.cdw10);
+                } /* switch cdw10 */
             break;
 
             default:
@@ -43,6 +57,10 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
                 DRVSIM_NOT_IMPLEMENTED_BENIGN("IO cmd %u has no special handling\n",
                         cmd_log->cmd.opc);
         }
+    }
+
+    if (cmd_log->response_buf && cmd_log->free_buf_on_completion) {
+        buffer_fini(cmd_log->response_buf);
     }
 
     return;
@@ -96,6 +114,47 @@ static void sim_process_completion_identify_controller(struct sim_cmd_log_entry_
     }
 
     log_ctrlr_completion_buf_id_controller(cmd_log);
+
+    struct spdk_nvme_ctrlr_data *resp = cmd_log->response_buf;
+    ctrlr_t *ctrlr = cmd_log->qpair->parent_controller;
+
+    pthread_mutex_lock(&ctrlr->lock);
+
+    if (resp->nn > ctrlr->num_namespaces) {
+        ctrlr->namespaces = (sim_nvme_ns_t *)realloc(ctrlr->namespaces, resp->nn * sizeof(sim_nvme_ns_t));
+    }
+
+    ctrlr->num_namespaces = resp->nn;
+    memset(ctrlr->namespaces, 0, resp->nn * sizeof(sim_nvme_ns_t));
+
+    pthread_mutex_unlock(&ctrlr->lock);
+
+    return;
+}
+
+static void sim_process_completion_identify_namespace(struct sim_cmd_log_entry_s *cmd_log)
+{
+    uint32_t ns_id = cmd_log->cmd.nsid;
+    sim_nvme_ns_t *n = &cmd_log->qpair->parent_controller->namespaces[ns_id];
+    struct spdk_nvme_ns_data *resp = (struct spdk_nvme_ns_data *)cmd_log->response_buf;
+
+    if (spdk_nvme_cpl_is_error(&cmd_log->cpl)) {
+        n->state = SIM_NS_STATE_IDENTIFY_FAILED;
+        DRVSIM_LOG("sc %u, sct %u => error (should be SUCCESS, GENERIC SUCCESS), no further processing\n",
+            cmd_log->cpl.status.sc, cmd_log->cpl.status.sct);
+        return;
+    } else if (cmd_log->response_buf_len < sizeof(struct spdk_nvme_ns_data)) {
+        DRVSIM_LOG("buffer of len %lu too small to parse as id-ns response (min %lu)\n",
+            cmd_log->response_buf_len, sizeof(struct spdk_nvme_ns_data));
+            return;
+    }
+
+    n->state = SIM_NS_STATE_IDENTIFY_COMPLETE;
+
+    n->size = resp->nsze;
+    n->capacity = resp->ncap;
+    n->utilization = resp->nuse;
+    memcpy(&n->nguid, &resp->nguid, sizeof(n->nguid));
 
     return;
 }

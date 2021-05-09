@@ -43,6 +43,23 @@ static void init_sim_config(char *json_string);
 static void drvsim_handle_completion(void *cb_args, nvme_ctrlr_completion_t *cmpl);
 static qpair_t *sim_allocate_qpair(ctrlr_t *ctrlr, bool is_adminq);
 static void sim_free_qpair(qpair_t *q);
+static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_id);
+static void wait_for_all_adminq_completions(ctrlr_t *ctrlr);
+static int nvme_send_cmd_raw_internal(
+                        ctrlr_t* ctrlr,
+                        qpair_t *qpair,
+                        unsigned int cdw0,
+                        unsigned int nsid,
+                        void* buf, size_t len,
+                        unsigned int cdw10,
+                        unsigned int cdw11,
+                        unsigned int cdw12,
+                        unsigned int cdw13,
+                        unsigned int cdw14,
+                        unsigned int cdw15,
+                        spdk_nvme_cmd_cb cb_fn,
+                        void* cb_arg,
+                        bool free_buf_on_completion_processing);
 
 ////module: qpair
 ///////////////////////////////
@@ -91,11 +108,91 @@ uint32_t qpair_get_latest_latency(qpair_t* q,
     return DRVSIM_RETCODE_FAILURE;
 }
 
+static void wait_for_all_adminq_completions(ctrlr_t *ctrlr)
+{
+    qpair_t *adminq = ctrlr->adminq;
+
+    do {
+        pthread_mutex_lock(&adminq->lock);
+
+        if ((adminq->commands_sent - adminq->aers_sent) > (adminq->responses_received - adminq->aers_completions_received)) {
+            pthread_mutex_unlock(&adminq->lock);
+            sim_sleep(0, 10000);
+            continue;   
+        } else {
+            pthread_mutex_unlock(&adminq->lock);
+            break;
+        }
+    } while (true);
+
+    sim_qpair_process_completions(adminq, DRVSIM_VERY_LARGE_NUMBER);
+}
+
+static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_id)
+{
+    int ret;
+    sim_nvme_ns_t *n = &ctrlr->namespaces[ns_id];
+    void *buf;
+    uint64_t phys_addr;
+    struct spdk_nvme_cmd cmd = {0};
+    uint32_t *cmd_as_arr = (uint32_t *)&cmd;
+    const size_t buf_size = sizeof(struct spdk_nvme_ns_data);
+
+    buf = buffer_init(buf_size, &phys_addr, 32, 0x00DDBA11);
+
+    /* what if we are racing with a completion for this namespace entry? */
+
+    n->parent_controller = ctrlr;
+    n->id = ns_id;
+    n->state = SIM_NS_STATE_CREATED;
+
+    cmd.opc = SPDK_NVME_OPC_IDENTIFY;
+    cmd.cdw10 = SPDK_NVME_IDENTIFY_NS;
+
+    ret = nvme_send_cmd_raw(ctrlr, NULL, cmd_as_arr[0], ns_id, buf, buf_size, cmd.cdw10,
+                        cmd.cdw11, cmd.cdw12, cmd.cdw13, cmd.cdw14, cmd.cdw15, NULL, NULL);
+
+    if (DRVSIM_RETCODE_SUCCESS != ret) {
+        buffer_fini(buf);
+        n->state = SIM_NS_STATE_IDENTIFY_FAILED;
+
+        return ret;
+    }
+
+    // wait for the response so that the caller can treat us as synchronous
+    wait_for_all_adminq_completions(ctrlr);
+
+    return DRVSIM_RETCODE_SUCCESS;
+}
+
 int nvme_set_ns(ctrlr_t *ctrlr)
 {
-  DRVSIM_ASSERT((ctrlr != NULL), "ctrlr cannot be NULL\n");
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return DRVSIM_RETCODE_FAILURE;
+    int ret = DRVSIM_RETCODE_SUCCESS;
+
+    DRVSIM_ASSERT((ctrlr && ctrlr->ctrlr_api_handle), "ctrlr %p or api-handle cannot be NULL\n", ctrlr);
+
+    const int nn_count = ctrlr->num_namespaces;
+    int i;
+    unsigned int success = 0;
+
+    /* send out identify-namespace on all the namespaces */
+    for (i = 0; i < nn_count; i++) {
+        int lret;
+        
+        lret = sim_sync_namespace(ctrlr, i);
+
+        if (DRVSIM_RETCODE_SUCCESS != lret) {
+            ret = lret;
+        } else {
+            success++;
+            DRVSIM_ASSERT((ctrlr->namespaces[i].state == SIM_NS_STATE_IDENTIFY_COMPLETE),
+                            "namespace %u, state %u is not IDENTIFIED\n", i, ctrlr->namespaces[i].state);
+        }
+    }
+
+    DRVSIM_LOG("ctrlr %p, %u namespace(s) identified, %u success", ctrlr, nn_count, success);
+
+    return ret;
 }
 
 struct spdk_nvme_ns* nvme_get_ns(ctrlr_t* ctrlr,
@@ -134,7 +231,7 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
                             unsigned int cdw14,
                             unsigned int cdw15,
                             cmd_cb_func cb_fn,
-                            void* cb_arg)
+                            void* cb_arg, bool free_buf_on_completion_processing)
 {
     sim_cmd_log_entry_t *e = (sim_cmd_log_entry_t *)malloc(sizeof(sim_cmd_log_entry_t));
     
@@ -160,6 +257,7 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
 
     e->response_buf = buf;
     e->response_buf_len = len;
+    e->free_buf_on_completion = free_buf_on_completion_processing;
 
     DRVSIM_LOG("For qp %p, adding cmd entry for opc %u, cid 0x%x - expect callback with ctx %p\n",
                     qpair, e->cmd.opc, e->cmd.cid, e);    
@@ -400,19 +498,21 @@ int free_completion_table(qpair_t *qpair)
     return cleaned;
 }
 
-int nvme_send_cmd_raw(ctrlr_t* ctrlr,
-                      qpair_t *qpair,
-                      unsigned int cdw0,
-                      unsigned int nsid,
-                      void* buf, size_t len,
-                      unsigned int cdw10,
-                      unsigned int cdw11,
-                      unsigned int cdw12,
-                      unsigned int cdw13,
-                      unsigned int cdw14,
-                      unsigned int cdw15,
-                      spdk_nvme_cmd_cb cb_fn,
-                      void* cb_arg)
+static int nvme_send_cmd_raw_internal(
+                        ctrlr_t* ctrlr,
+                        qpair_t *qpair,
+                        unsigned int cdw0,
+                        unsigned int nsid,
+                        void* buf, size_t len,
+                        unsigned int cdw10,
+                        unsigned int cdw11,
+                        unsigned int cdw12,
+                        unsigned int cdw13,
+                        unsigned int cdw14,
+                        unsigned int cdw15,
+                        spdk_nvme_cmd_cb cb_fn,
+                        void* cb_arg,
+                        bool free_buf_on_completion_processing)
 {
     int ret;
     sim_cmd_log_entry_t *completion_ctx = NULL;
@@ -440,7 +540,7 @@ int nvme_send_cmd_raw(ctrlr_t* ctrlr,
                       cdw13,
                       cdw14,
                       cdw15,
-                      cb_fn, cb_arg);
+                      cb_fn, cb_arg, free_buf_on_completion_processing);
     }
 
     DRVSIM_ASSERT((completion_ctx), "could not allocate completion ctx\n");
@@ -462,10 +562,36 @@ int nvme_send_cmd_raw(ctrlr_t* ctrlr,
 
     if (0 != ret) {
         free_log_entry(completion_ctx);
-        return DRVSIM_RETCODE_FAILURE;
+
+        if (free_buf_on_completion_processing) {
+            buffer_fini(buf);
+        }
+
+        return ret;
     }
 
     return ret;
+}
+
+int nvme_send_cmd_raw(ctrlr_t* ctrlr,
+                      qpair_t *qpair,
+                      unsigned int cdw0,
+                      unsigned int nsid,
+                      void* buf, size_t len,
+                      unsigned int cdw10,
+                      unsigned int cdw11,
+                      unsigned int cdw12,
+                      unsigned int cdw13,
+                      unsigned int cdw14,
+                      unsigned int cdw15,
+                      spdk_nvme_cmd_cb cb_fn,
+                      void* cb_arg)
+{
+ 
+    return nvme_send_cmd_raw_internal(
+                ctrlr, qpair, cdw0, nsid, buf, len,
+                cdw10, cdw11, cdw12, cdw13, cdw14, cdw15,
+                cb_fn, cb_arg, false);
 }
 
 int nvme_set_adminq(ctrlr_t *ctrlr)

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 
 #include "sim_common.h"
 
@@ -46,4 +47,21 @@ void sim_hex_dump(const void *data, size_t size)
 			}
 		}
 	}
+}
+
+void sim_sleep(unsigned int seconds, unsigned int nanoseconds)
+{
+    struct timespec req, rem;
+    int ret;
+
+    req.tv_sec = seconds;
+    req.tv_nsec = nanoseconds;
+
+    ret = nanosleep(&req, &rem);
+
+    if (ret) {
+        DRVSIM_LOG_TO_FILE(stderr, "WARNING - nanosleep returned %d\n", ret);
+    }
+
+    return;
 }

@@ -23,7 +23,7 @@ ext_module_list = [
                 include_dirs = ['../spdk/include', './driver/include'],
 
                 # extra standard libraries
-                libraries=['ev', 'pthread'],
+                libraries=['ev', 'pthread', 'uuid'],
 
                 # sim static libraries
                 extra_objects=[
