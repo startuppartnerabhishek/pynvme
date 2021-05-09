@@ -1,5 +1,5 @@
-#include "driver.h"
 #include "sim_common.h"
+#include "sim_types.h"
 
 int ioworker_entry(struct spdk_nvme_ns* ns,
                    qpair_t *qpair,

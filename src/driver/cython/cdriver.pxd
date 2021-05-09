@@ -201,11 +201,6 @@ cdef extern from "driver.h":
 
     const char* cmd_name(unsigned char opc, int set)
 
-    void intc_clear(qpair_t * q)
-    bint intc_isset(qpair_t * q)
-    void intc_mask(qpair_t * q)
-    void intc_unmask(qpair_t * q)
-
     void driver_srand(unsigned int seed)
     unsigned int driver_io_qpair_count(ctrlr_t* c)
     bint driver_no_secondary(ctrlr_t* c)
@@ -214,3 +209,9 @@ cdef extern from "driver.h":
     # pensando additions
     int pen_common_connectivity_check(char *src, char *dst, unsigned int count, int return_this)
     int pen_sim_connectivity_check(char *src, char *dst, unsigned int count, int return_this)
+
+cdef extern from "intr_mgt.h":
+    void intc_clear(qpair_t * q)
+    bint intc_isset(qpair_t * q)
+    void intc_mask(qpair_t * q)
+    void intc_unmask(qpair_t * q)

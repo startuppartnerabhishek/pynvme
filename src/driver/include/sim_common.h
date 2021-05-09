@@ -2,6 +2,11 @@
 #define __DRIVER_SIM_COMMON_H__
 
 #include <stdio.h>
+#include <pthread.h>
+
+#include "driver.h"
+
+/************************  asserting and printing - low level *********************************/
 
 #define __SHORTENED_FILENAME__ (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
 
@@ -13,7 +18,7 @@ do {                                                                            
 
 #define DRVSIM_LOG_TO_FILE(_FILE_STAR_, _FMT_, ...)                                                                  \
 do {                                                                                            \
-    fprintf(_FILE_STAR_, "%s:%u %s(): "_FMT_, __SHORTENED_FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__);   \
+    fprintf(_FILE_STAR_, "[0x%08lX] %s:%u %s(): "_FMT_, pthread_self(), __SHORTENED_FILENAME__, __LINE__, __FUNCTION__, ##__VA_ARGS__);   \
     fflush(_FILE_STAR_);                                                                             \
 } while (0)
 
@@ -43,11 +48,25 @@ do {                                                    \
     DRVSIM_LOG("TBD/TODO:" _FMT_, ##__VA_ARGS__);       \
 } while (0)
 
+
+void sim_hex_dump(const void* data, size_t size);
+
+/************************ </end> asserting and printing low level *****************************/
+
+
+
+/************************* general defines ***********************************/
+
 #define DRVSIM_RETCODE_SUCCESS 0
 #define DRVSIM_RETCODE_FAILURE -1
 
 #define DRVSIM_VERY_LARGE_NUMBER ((unsigned int)(-1))
 
-void sim_hex_dump(const void* data, size_t size);
+
+#define SIM_MAX_STRING_LEN  1024
+
+
+/**************************** </end> general defines ********************************/
+
 
 #endif
