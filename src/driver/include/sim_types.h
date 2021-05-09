@@ -55,7 +55,7 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
                             cmd_cb_func cb_fn,
                             void* cb_arg, bool free_buf_on_completion_processing);
 
-int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe);
+int sim_receive_and_note_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe);
 
 int prune_completion_table(qpair_t *qpair, unsigned int max_clean);
 

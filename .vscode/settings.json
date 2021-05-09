@@ -20,5 +20,8 @@
     "terminal.integrated.shell.linux": "/bin/bash",
     "editor.minimap.enabled": true,
     "editor.detectIndentation": false,
-    "terminal.integrated.fontSize": 12
+    "terminal.integrated.fontSize": 12,
+    "files.associations": {
+        "mutex": "c"
+    }
 }
