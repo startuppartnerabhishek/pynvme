@@ -117,8 +117,27 @@ typedef struct sim_cmd_log_entry_s {
     bool is_completed;
     bool is_processed;
 
+    bool free_buf_on_completion;
+
     completion_cb_context_t cb_ctx;
 } sim_cmd_log_entry_t;
+
+typedef struct sim_nvme_ns_s {
+    struct sim_nvme_ctrlr_s     *parent_controller;
+
+#define SIM_NS_STATE_CREATED                0
+#define SIM_NS_STATE_IDENTIFY_REQUESTED     1
+#define SIM_NS_STATE_IDENTIFY_COMPLETE      2
+#define SIM_NS_STATE_IDENTIFY_FAILED        3
+    unsigned int                state;
+
+    unsigned int                id;
+
+    unsigned int                size;
+    unsigned int                capacity;
+    unsigned int                utilization;
+    unsigned char			    nguid[16];
+} sim_nvme_ns_t;
 
 typedef struct sim_nvme_qpair_s {
     struct sim_nvme_qpair_s *prev;
@@ -128,41 +147,23 @@ typedef struct sim_nvme_qpair_s {
     sim_cmd_log_entry_t *log_list_head;
     unsigned int log_entry_count;
     unsigned int commands_sent;
+    unsigned int aers_sent;
     unsigned int responses_received;
+    unsigned int aers_completions_received;
     unsigned int completions_collected;
     pthread_mutex_t lock;
 } qpair_t;
 
 typedef struct sim_nvme_ctrlr_s {
-    void            *ctrlr_api_handle;
-    qpair_t         *adminq;
-    qpair_t         *other_queues_list;
+    void                *ctrlr_api_handle;
+    qpair_t             *adminq;
+    qpair_t             *other_queues_list;
+    unsigned int        num_namespaces;
+    sim_nvme_ns_t       *namespaces;
     pthread_mutex_t lock;
 } ctrlr_t;
 
 typedef ctrlr_t pcie_t; // in SIM MODE, a controller also provides PCIE access
-
-sim_cmd_log_entry_t *sim_add_cmd_log_entry(
-                            qpair_t *qpair,
-                            unsigned int cdw0,
-                            unsigned int nsid,
-                            void* buf, size_t len,
-                            unsigned int cdw10,
-                            unsigned int cdw11,
-                            unsigned int cdw12,
-                            unsigned int cdw13,
-                            unsigned int cdw14,
-                            unsigned int cdw15,
-                            cmd_cb_func cb_fn,
-                            void* cb_arg);
-
-int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe);
-
-int prune_completion_table(qpair_t *qpair, unsigned int max_clean);
-
-int free_completion_table(qpair_t *qpair);
-
-void free_log_entry(sim_cmd_log_entry_t *e);
 
 #endif
 

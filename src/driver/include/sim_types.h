@@ -37,6 +37,31 @@ int sim_qpair_process_completions(qpair_t *q, unsigned int max);
 void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry);
 void log_ctrlr_completion(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry);
 void log_ctrlr_completion_buf_id_controller(sim_cmd_log_entry_t *cmd_log_entry);
+void log_ctrlr_completion_buf_id_namespace(sim_cmd_log_entry_t *cmd_log_entry);
+void sim_sleep(unsigned int seconds, unsigned int nanoseconds);
+
+/* command logs */
+sim_cmd_log_entry_t *sim_add_cmd_log_entry(
+                            qpair_t *qpair,
+                            unsigned int cdw0,
+                            unsigned int nsid,
+                            void* buf, size_t len,
+                            unsigned int cdw10,
+                            unsigned int cdw11,
+                            unsigned int cdw12,
+                            unsigned int cdw13,
+                            unsigned int cdw14,
+                            unsigned int cdw15,
+                            cmd_cb_func cb_fn,
+                            void* cb_arg, bool free_buf_on_completion_processing);
+
+int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe);
+
+int prune_completion_table(qpair_t *qpair, unsigned int max_clean);
+
+int free_completion_table(qpair_t *qpair);
+
+void free_log_entry(sim_cmd_log_entry_t *e);
 
 /********************* </end> externs, types and declarations ***********************/
 
