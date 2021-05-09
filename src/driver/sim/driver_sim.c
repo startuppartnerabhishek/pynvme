@@ -40,7 +40,7 @@ static sim_config_item_t g_simcfg_file_items[] = {
 };
 
 static void init_sim_config(char *json_string);
-static void drvsim_handle_completion(void *cb_args, nvme_ctrlr_completion_t *cmpl);
+static void drvsim_completion_callback(void *cb_args, nvme_ctrlr_completion_t *cmpl);
 static qpair_t *sim_allocate_qpair(ctrlr_t *ctrlr, bool is_adminq);
 static void sim_free_qpair(qpair_t *q);
 static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_array_idx);
@@ -113,14 +113,14 @@ static void wait_for_all_adminq_completions(ctrlr_t *ctrlr)
     qpair_t *adminq = ctrlr->adminq;
 
     do {
-        pthread_mutex_lock(&adminq->lock);
+        pthread_mutex_lock(&ctrlr->lock);
 
         if ((adminq->commands_sent - adminq->aers_sent) > (adminq->responses_received - adminq->aers_completions_received)) {
-            pthread_mutex_unlock(&adminq->lock);
+            pthread_mutex_unlock(&ctrlr->lock);
             sim_sleep(0, 10000);
             continue;   
         } else {
-            pthread_mutex_unlock(&adminq->lock);
+            pthread_mutex_unlock(&ctrlr->lock);
             break;
         }
     } while (true);
@@ -202,7 +202,7 @@ struct spdk_nvme_ns* nvme_get_ns(ctrlr_t* ctrlr,
   return NULL;
 }
 
-static void drvsim_handle_completion(void *cb_args, nvme_ctrlr_completion_t *cmpl)
+static void drvsim_completion_callback(void *cb_args, nvme_ctrlr_completion_t *cmpl)
 {
     completion_cb_context_t *compl_ctx = (completion_cb_context_t *)cb_args;
     struct spdk_nvme_cpl *spec_completion = (struct spdk_nvme_cpl *)cmpl;    
@@ -214,7 +214,7 @@ static void drvsim_handle_completion(void *cb_args, nvme_ctrlr_completion_t *cmp
 
     /*  both agent's and spdk's completion structures are from the spec, so
         we should be ok to just type-cast and pass on. */
-    sim_handle_completion((sim_cmd_log_entry_t *)cb_args, (cpl *)cmpl);
+    sim_receive_and_note_completion((sim_cmd_log_entry_t *)cb_args, (cpl *)cmpl);
 
     return;
 }
@@ -262,7 +262,7 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
     DRVSIM_LOG("For qp %p, adding cmd entry for opc %u, cid 0x%x - expect callback to fn %p with ctx %p\n",
                     qpair, e->cmd.opc, e->cmd.cid, cb_fn, e);    
 
-    pthread_mutex_lock(&qpair->lock);
+    pthread_mutex_lock(&qpair->parent_controller->lock);
 
     /* connect to qpair - just behind the tail */
     qpair->commands_sent++;
@@ -288,12 +288,12 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
     DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, log entry count %u, completions collected %u\n",
         qpair, qpair->commands_sent, qpair->responses_received, qpair->log_entry_count, qpair->completions_collected);
 
-    pthread_mutex_unlock(&qpair->lock);
+    pthread_mutex_unlock(&qpair->parent_controller->lock);
 
     return e;
 }
 
-int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe)
+int sim_receive_and_note_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe)
 {
     DRVSIM_ASSERT((completion_ctx && completion_ctx->qpair),
         "completion_ctx %p && completion_ctx->qpair\n", completion_ctx);
@@ -307,7 +307,11 @@ int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe)
         "completion ctx %p cmd.cid 0x%x does not match cid in completion 0x%x\n",
         completion_ctx, completion_ctx->cmd.cid, cqe->cid);
 
-    pthread_mutex_lock(&qpair->lock);
+    DRVSIM_ASSERT((qpair->parent_controller),  // wrong context?
+        "qpair %p has null parent controller\n", qpair);
+
+    /* grab controoller level lock to avoid completion side-effects before the submission call stack has unwound */
+    pthread_mutex_lock(&qpair->parent_controller->lock);
 
     completion_ctx->is_completed = true;
 
@@ -319,6 +323,8 @@ int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe)
         completion_ctx->cb_ctx.cb_fn(completion_ctx->cb_ctx.response_args, cqe);
     }
 
+    pthread_mutex_unlock(&qpair->parent_controller->lock);
+
     if (g_sim_config.max_log_entries_per_qpair > 0 &&
             completion_ctx->qpair->log_entry_count > g_sim_config.max_log_entries_per_qpair) {
         prune_completion_table(
@@ -326,8 +332,6 @@ int sim_handle_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cqe)
             completion_ctx->qpair->log_entry_count - g_sim_config.max_log_entries_per_qpair
         );
     }
-
-    pthread_mutex_unlock(&qpair->lock);
 
     log_ctrlr_completion(completion_ctx->qpair, completion_ctx);
 
@@ -345,7 +349,7 @@ int prune_completion_table(qpair_t *qpair, unsigned int max_clean)
     const unsigned int max_entries_to_scan = qpair->log_entry_count;
     unsigned int scanned = 0;
 
-    pthread_mutex_lock(&qpair->lock);
+    pthread_mutex_lock(&qpair->parent_controller->lock);
 
     while (cleaned < max_clean && scanned < max_entries_to_scan) {
         if (!e) {
@@ -362,7 +366,7 @@ int prune_completion_table(qpair_t *qpair, unsigned int max_clean)
 
             cleaned++;
             qpair->log_entry_count--;
-            free(e);
+            free_log_entry(e);
 
             if (qpair->log_entry_count > 0) {
                 /* detach e from linked list */
@@ -376,7 +380,7 @@ int prune_completion_table(qpair_t *qpair, unsigned int max_clean)
         e = next;
     }
 
-    pthread_mutex_unlock(&qpair->lock);
+    pthread_mutex_unlock(&qpair->parent_controller->lock);
 
     return cleaned;
 }
@@ -453,8 +457,6 @@ void free_log_entry(sim_cmd_log_entry_t *e)
     DRVSIM_ASSERT((qpair), "log entry %p associated with NULL qp\n", e);
     DRVSIM_ASSERT((qpair->log_entry_count), "log entry %p of qp %p, but qp has no log entries\n", e, qpair);
 
-    pthread_mutex_lock(&qpair->lock);
-
     free(e);
 
     qpair->log_entry_count--;
@@ -466,8 +468,6 @@ void free_log_entry(sim_cmd_log_entry_t *e)
         qpair->log_list_head = NULL;
     }
 
-    pthread_mutex_unlock(&qpair->lock);
-
     return;
 }
 
@@ -476,7 +476,7 @@ int free_completion_table(qpair_t *qpair)
     int cleaned = 0;
     const unsigned int initial_entry_count = qpair->log_entry_count;
 
-    pthread_mutex_lock(&qpair->lock);
+    pthread_mutex_lock(&qpair->parent_controller->lock);
 
     while (qpair->log_list_head) {
         DRVSIM_ASSERT((qpair->log_entry_count > 0),
@@ -493,7 +493,7 @@ int free_completion_table(qpair_t *qpair)
         "qpair %p still reports %u after cleaning %d entry(s), max %u\n",
         qpair, qpair->log_entry_count, cleaned, initial_entry_count);
 
-    pthread_mutex_unlock(&qpair->lock);
+    pthread_mutex_unlock(&qpair->parent_controller->lock);
 
     return cleaned;
 }
@@ -545,6 +545,12 @@ static int nvme_send_cmd_raw_internal(
 
     DRVSIM_ASSERT((completion_ctx), "could not allocate completion ctx\n");
 
+    /* Grab an api lock or else we do not want to process this command's completion in a different thread
+     * till this command submission call stack has unwound and updated its book-keeping.
+     */
+
+    pthread_mutex_lock(&ctrlr->lock);
+
     ret = nvme_ctrlr_submit_command(
         ctrlr->ctrlr_api_handle,
         cdw0,
@@ -556,9 +562,11 @@ static int nvme_send_cmd_raw_internal(
         cdw13,
         cdw14,
         cdw15,
-        drvsim_handle_completion,
+        drvsim_completion_callback,
         completion_ctx
     );
+
+    pthread_mutex_unlock(&ctrlr->lock);
 
     if (0 != ret) {
         free_log_entry(completion_ctx);

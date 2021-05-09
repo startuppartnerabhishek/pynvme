@@ -7,9 +7,13 @@
 
 #define LOG_TYPE_BANNER(__STRUCTNAME__, __CHECKPOINT__) DRVSIM_LOG("<<<<<<<<<< %s (%s) >>>>>>>>>>>>>>>\n", __STRUCTNAME__, __CHECKPOINT__)
 
-#define LOG_FIELD_LONGINT(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__) DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s = 0x%lx\n", __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__, (__STRUCTPTR__)->__FIELDNAME__) 
+#define LOG_FIELD_LONGINT(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__)        \
+            DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s = 0x%lx = %lu\n",     \
+                __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__, (__STRUCTPTR__)->__FIELDNAME__, (__STRUCTPTR__)->__FIELDNAME__) 
 
-#define LOG_FIELD_INT(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__) DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s = 0x%x\n", __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__, (__STRUCTPTR__)->__FIELDNAME__)
+#define LOG_FIELD_INT(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__)            \
+            DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s = 0x%x = %u\n",       \
+                __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__, (__STRUCTPTR__)->__FIELDNAME__, (__STRUCTPTR__)->__FIELDNAME__)
 
 #define LOG_FIELD_HEX(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__)                                                    \
 do {                                                                                                                    \

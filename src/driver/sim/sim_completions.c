@@ -81,7 +81,7 @@ int sim_qpair_process_completions(qpair_t *q, unsigned int max)
     sim_cmd_log_entry_t *e = q->log_list_head;
     const unsigned int log_entry_count = q->log_entry_count;
 
-    pthread_mutex_lock(&q->lock);
+    pthread_mutex_lock(&q->parent_controller->lock);
 
     while (processed < max && scanned < log_entry_count) {
         scanned++;
@@ -103,7 +103,7 @@ int sim_qpair_process_completions(qpair_t *q, unsigned int max)
             q, q->commands_sent, q->responses_received, q->log_entry_count, q->completions_collected);
     }
 
-    pthread_mutex_unlock(&q->lock);
+    pthread_mutex_unlock(&q->parent_controller->lock);
 
     return processed;
 }
@@ -125,16 +125,12 @@ static void sim_process_completion_identify_controller(struct sim_cmd_log_entry_
     struct spdk_nvme_ctrlr_data *resp = cmd_log->response_buf;
     ctrlr_t *ctrlr = cmd_log->qpair->parent_controller;
 
-    pthread_mutex_lock(&ctrlr->lock);
-
     if (resp->nn > ctrlr->num_namespaces) {
         ctrlr->namespaces = (sim_nvme_ns_t *)realloc(ctrlr->namespaces, resp->nn * sizeof(sim_nvme_ns_t));
     }
 
     ctrlr->num_namespaces = resp->nn;
     memset(ctrlr->namespaces, 0, resp->nn * sizeof(sim_nvme_ns_t));
-
-    pthread_mutex_unlock(&ctrlr->lock);
 
     return;
 }
