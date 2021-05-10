@@ -5,7 +5,8 @@
 
 #include "spdk/nvme_spec.h"
 
-#define LOG_TYPE_BANNER(__STRUCTNAME__, __CHECKPOINT__) DRVSIM_LOG("<<<<<<<<<< %s (%s) >>>>>>>>>>>>>>>\n", __STRUCTNAME__, __CHECKPOINT__)
+#define LOG_TYPE_BANNER(__STRUCTNAME__, __CHECKPOINT__)     \
+            DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, "\n<<<<<<<<<< %s (%s) >>>>>>>>>>>>>>>\n\n", __STRUCTNAME__, __CHECKPOINT__)
 
 #define LOG_FIELD_LONGINT(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__)        \
             DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s = 0x%lx = %lu\n",     \
@@ -90,7 +91,7 @@ void log_ctrlr_completion_buf_id_controller(sim_cmd_log_entry_t *cmd_log_entry)
 {
     struct spdk_nvme_ctrlr_data *resp = cmd_log_entry->response_buf;
 
-    LOG_TYPE_BANNER("Idenitfy Controller Response", "START");
+    LOG_TYPE_BANNER("Identify Controller Response", "START");
 
     LOG_FIELD_INT(resp, vid, "PCI Vendor ID");
     LOG_FIELD_INT(resp, ssvid, "PCI subsystem vendor id");
@@ -114,7 +115,7 @@ void log_ctrlr_completion_buf_id_controller(sim_cmd_log_entry_t *cmd_log_entry)
     LOG_FIELD_INT(resp, nn, "Number of namespaces");
     LOG_FIELD_HEX(resp, subnqn, "Subsystem NQN");
 
-    LOG_TYPE_BANNER("Idenitfy Controller Response", "END");
+    LOG_TYPE_BANNER("Identify Controller Response", "END");
 
     return;
 }
@@ -124,7 +125,7 @@ void log_ctrlr_completion_buf_id_namespace(sim_cmd_log_entry_t *cmd_log_entry)
     struct spdk_nvme_ns_data *resp = cmd_log_entry->response_buf;
     char decoded_nguid[UUID_STR_LEN] = {0};
 
-    LOG_TYPE_BANNER("Idenitfy Namepsace Response", "START");
+    LOG_TYPE_BANNER("Identify Namepsace Response", "START");
 
     LOG_FIELD_LONGINT(resp, nsze, "Size");
     LOG_FIELD_LONGINT(resp, ncap, "Capacity");
@@ -135,7 +136,7 @@ void log_ctrlr_completion_buf_id_namespace(sim_cmd_log_entry_t *cmd_log_entry)
 
     DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">>>> decoded nguid = %s\n", decoded_nguid);
 
-    LOG_TYPE_BANNER("Idenitfy Namespace Response", "END");
+    LOG_TYPE_BANNER("Identify Namespace Response", "END");
 
     return;
 }
