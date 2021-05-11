@@ -1,0 +1,4 @@
+scripts/pensando/platform-sanity/connectivity_test.py::test_py_invocation
+scripts/pensando/platform-sanity/connectivity_test.py::test_py_invocation_sample_failure
+scripts/pensando/platform-sanity/connectivity_test.py::test_driver_common_reachability
+scripts/pensando/platform-sanity/connectivity_test.py::test_nvme_identify_controller

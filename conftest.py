@@ -56,7 +56,7 @@ def pytest_addoption(parser):
         "--deviceMode", action="store", default="SIM", help="choose test device mode - run against PCIE or SIM (simulation)"
     )
     parser.addoption(
-        "--conf", action="store", default="", help="environment configuration"
+        "--conf", action="store", default="conf/simconf.json", help="environment configuration"
     )
 
 def pytest_configure(config):
