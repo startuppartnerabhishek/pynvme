@@ -40,7 +40,7 @@ import logging
 import warnings
 
 from conftest import globalNvmeModule as d
-import nvme  # test double import
+# import nvme  # test double import
 
 
 @pytest.mark.parametrize("repeat", range(2))
