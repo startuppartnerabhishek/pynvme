@@ -781,7 +781,15 @@ def test_get_identify(nvme0, nvme0n1):
     assert id_buf[0] == 0
     nvme0.identify(id_buf, 1, 0)
     nvme0.waitdone()
-    assert id_buf[0] != 0
+    
+    nsze_bits_set = 0
+    for i in range(0, 15):
+        nsze_bits_set |= id_buf[i]
+
+    # abhishek - commented out, the first byte of response is allowed to be zero, but the
+    # the first quad-word should not be 
+    # assert id_buf[0] != 0
+    assert nsze_bits_set != 0
     assert id_buf[0] == nvme0n1.id_data(0)
     assert nvme0.id_data(4, 0) != nvme0n1.id_data(4, 0)
     assert nvme0n1.id_data(8, 5) != nvme0n1.id_data(4, 0)

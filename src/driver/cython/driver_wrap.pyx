@@ -978,9 +978,10 @@ cdef class Controller(object):
                     raise NvmeEnumerateError("retry init namespaces failed")
 
             # 8. set/get num of queues
-            logging.debug("init number of queues")
+            logging.debug("_nvme_init(self): init number of queues"); sys.stdout.flush();
             nvme0.setfeatures(0x7, cdw11=0xfffefffe).waitdone()
             cdw0 = nvme0.getfeatures(0x7).waitdone()
+            logging.debug("_nvme_init(self): getfeatures(0x7) returned cmpl-cdw0 0x%x" % cdw0); sys.stdout.flush();
             nvme0.init_queues(cdw0)
 
             # 9. send first aer cmd
@@ -1872,7 +1873,7 @@ cdef class Namespace(object):
     """
 
     cdef Controller _nvme
-    cdef d.namespace * _ns
+    cdef d.namespace_t * _ns
     cdef unsigned int _nsid
     cdef unsigned int sector_size
     cdef unsigned long nlba_verify
@@ -2923,11 +2924,11 @@ if os.geteuid() == 0 or globalTestOptions["mode"] == "SIM":
     # module fini
     atexit.register(d.driver_fini)
 
+    # spawn only limited data from parent process
+    _mp = multiprocessing.get_context("spawn")
+
 if os.geteuid() == 0:
     # config runtime: disable ASLR, 8T drive, S3
     subprocess.call('sudo ulimit -n 32000 2> /dev/null || true', shell=True)
     subprocess.call('sudo sh -c "echo deep > /sys/power/mem_sleep" 2> /dev/null || true', shell=True)
     subprocess.call('sudo sh -c "echo 0 > /proc/sys/kernel/randomize_va_space" 2> /dev/null || true', shell=True)
-
-    # spawn only limited data from parent process
-    _mp = multiprocessing.get_context("spawn")

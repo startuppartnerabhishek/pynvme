@@ -37,10 +37,10 @@ import time
 import pytest
 import logging
 
-from nvme import *
+from conftest import globalNvmeModule as d
 
 
-class PRP(Buffer):
+class PRP(d.Buffer):
     pass
 
 
@@ -129,7 +129,7 @@ class SQE(list):
         return (self[7]<<32) | self[6]
 
     @prp1.setter
-    def prp1(self, buf: Buffer):
+    def prp1(self, buf: d.Buffer):
         prp = buf.phys_addr
         self[6] = prp&0xffffffff
         self[7] = (prp>>32)&0xffffffff
@@ -140,7 +140,7 @@ class SQE(list):
         return (self[9]<<32) | self[8]
 
     @prp2.setter
-    def prp2(self, buf: Buffer):
+    def prp2(self, buf: d.Buffer):
         prp = buf.phys_addr
         self[8] = prp&0xffffffff
         self[9] = (prp>>32)&0xffffffff

@@ -1211,6 +1211,21 @@ static void _ns_uname(struct spdk_nvme_ns* ns, char* name, uint32_t len)
   SPDK_DEBUGLOG(SPDK_LOG_NVME, "crc table name: %s\n", name);
 }
 
+bool ns_verify_enable(struct spdk_nvme_ns* ns, bool enable)
+{
+  crc_table_t* crc_table = (crc_table_t*)ns->crc_table;
+
+  SPDK_INFOLOG(SPDK_LOG_NVME, "enable inline data verify: %d\n", enable);
+
+  if (crc_table != NULL)
+  {
+    // crc is created, so verify is possible
+    crc_table->enabled = enable;
+    return true;
+  }
+
+  return false;
+}
 
 static int ns_table_init(struct spdk_nvme_ns* ns, uint64_t table_size)
 {
@@ -1281,11 +1296,11 @@ static void ns_table_fini(struct spdk_nvme_ns* ns)
 }
 
 
-struct spdk_nvme_ns* ns_init(ctrlr_t * ctrlr,
+namespace_t* ns_init(ctrlr_t * ctrlr,
                              uint32_t nsid,
                              uint64_t nlba_verify)
 {
-  struct spdk_nvme_ns* ns = spdk_nvme_ctrlr_get_ns(ctrlr, nsid);
+  namespace_t* ns = spdk_nvme_ctrlr_get_ns(ctrlr, nsid);
 
   assert(ctrlr != NULL);
   assert(nsid > 0);

@@ -114,7 +114,7 @@ pytest: info
 
 test:
 	- rm test_${pciaddr}.log
-	make pytest 2>test_${pciaddr}.log | tee -a test_${pciaddr}.log
+	make pytest 2>&1 | tee -a test_${pciaddr}.log
 	- sudo rm -rf .pytest_cache
 
 sim_info:
@@ -134,7 +134,7 @@ pytest_sim: sim_info
 	python3 -B -m pytest $(TESTS) --deviceMode=SIM --conf=$(CONF_FILE) -s -v -r Efsx --excelreport=${REPORTFILE} --verbose
 
 sim_test:
-	make pytest_sim 2>${LOGFILE} | tee -a ${LOGFILE}
+	make pytest_sim 2>&1 | tee -a ${LOGFILE}
 	- rm -rf .pytest_cache
 
 # local nvme tcp target

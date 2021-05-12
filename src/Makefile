@@ -52,7 +52,7 @@ LIBNAME = pynvme
 
 include $(SPDK_ROOT_DIR)/mk/spdk.lib.mk
 
-.PHONY: all_stage_1 all_stage_2 all_stage_3 all_stage_4 all unittest clean cython_clean c_objs_clean sim sim_clean sim_install cython_clean_generated_common_src
+.PHONY: all_stage_1 all_stage_2 all_stage_3 all_stage_4 all unittest clean cython_clean c_objs_clean c_common_objs_clean sim sim_clean sim_install cython_clean_generated_common_src
 
 clean: cython_clean c_objs_clean sim_clean
 
@@ -74,8 +74,11 @@ cython_sim_lib: sim
 
 # driver
 
-c_objs_clean:
-	@sudo rm -rf build/temp/* $(DRV_COMMON_DIR)/*.[od] $(DRV_SPDK_EXT_DIR)/*.[od]
+c_common_objs_clean:
+	@sudo rm -rf build/temp/* $(DRV_COMMON_DIR)/*.[od]
+
+c_objs_clean: c_common_objs_clean
+	@sudo rm -rf $(DRV_SPDK_EXT_DIR)/*.[od]
 
 # sim
 sim:
@@ -94,7 +97,7 @@ all_stage_1: cython_lib
 
 # Clean out the common generated objects/src with clashing names from sim build.
 # cythonize and distutils fail to clean them.
-all_stage_2: all_stage_1 cython_clean_generated_common_src
+all_stage_2: all_stage_1 cython_clean_generated_common_src c_common_objs_clean
 	@echo +++++++ completed build stage 2 for TGT=$@ depending on DEP=$^ +++++++
 
 all_stage_3: all_stage_2 cython_sim_lib

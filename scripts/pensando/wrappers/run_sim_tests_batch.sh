@@ -48,14 +48,14 @@ printUsageAndExit() {
   echo "EXAMPLES:" >&2
   echo >&2
   echo "Run many tests: --->" >&2
-  echo "    $0 -m NODES file1::proc1 file2::class2::test2 ..." >&2
+  echo "    $0 -m NODES path/to/file1.py::proc1 path/to/file2.py::class2::test2 ..." >&2
   echo >&2
   echo "Run many tests, selected by markers: --->" >&2
   echo "    $0 -m MARKERS marker1 marker2 ..." >&2
   echo >&2
   echo "Run many tests, from file: --->" >&2
-  echo "    $0 -m NODES -b file1.txt file2.txt ..." >&2
-  echo "where file*.txt mention a list of tests, one per line" >&2
+  echo "    $0 -m NODES -b path/to/file1.txt path/to/file2.txt ..." >&2
+  echo "where file*.txt mention a list of tests or markers, one per line" >&2
   echo >&2
   exit 1;
 }

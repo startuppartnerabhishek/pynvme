@@ -36,7 +36,7 @@ cdef extern from "driver.h":
         pass
     ctypedef struct ctrlr_t:
         pass
-    ctypedef struct namespace:
+    ctypedef struct namespace_t:
         pass
     ctypedef struct pcie:
         pass
@@ -145,7 +145,7 @@ cdef extern from "driver.h":
                           cmd_cb_func cb_fn,
                           void * cb_arg)
     bint nvme_cpl_is_error(const cpl * cpl)
-    namespace * nvme_get_ns(ctrlr_t * c, unsigned int nsid)
+    namespace_t * nvme_get_ns(ctrlr_t * c, unsigned int nsid)
     void crc32_unlock_all(ctrlr_t * c)
 
     void nvme_register_timeout_cb(ctrlr_t * ctrlr,
@@ -170,11 +170,11 @@ cdef extern from "driver.h":
     int qpair_get_id(qpair_t * q)
     int qpair_free(qpair_t * q)
 
-    namespace * ns_init(ctrlr_t * c, unsigned int nsid, unsigned long nlba_verify)
-    int ns_refresh(namespace * ns, unsigned int nsid, ctrlr_t * c)
-    bint ns_verify_enable(namespace * ns, bint enable)
+    namespace_t * ns_init(ctrlr_t * c, unsigned int nsid, unsigned long nlba_verify)
+    int ns_refresh(namespace_t * ns, unsigned int nsid, ctrlr_t * c)
+    bint ns_verify_enable(namespace_t * ns, bint enable)
     int ns_cmd_io(unsigned char opcode,
-                  namespace * ns,
+                  namespace_t * ns,
                   qpair_t * qpair,
                   void * buf,
                   size_t len,
@@ -186,11 +186,11 @@ cdef extern from "driver.h":
                   unsigned int dword13,
                   unsigned int dword14,
                   unsigned int dword15)
-    unsigned int ns_get_sector_size(namespace * ns)
-    unsigned long ns_get_num_sectors(namespace * ns)
-    int ns_fini(namespace * ns)
+    unsigned int ns_get_sector_size(namespace_t * ns)
+    unsigned long ns_get_num_sectors(namespace_t * ns)
+    int ns_fini(namespace_t * ns)
 
-    int ioworker_entry(namespace* ns,
+    int ioworker_entry(namespace_t* ns,
                        qpair_t* qpair,
                        ioworker_args* args,
                        ioworker_rets* rets)
