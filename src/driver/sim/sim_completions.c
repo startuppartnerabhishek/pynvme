@@ -20,8 +20,8 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
         sim_hex_dump(&cmd_log->cmd, sizeof(cmd_log->cmd));
         DRVSIM_LOG("completion:\n");
         sim_hex_dump(&cmd_log->cpl, sizeof(cmd_log->cpl));
+        DRVSIM_LOG("response buffer %p, len %lu:\n", cmd_log->response_buf, cmd_log->response_buf_len);
         if (cmd_log->response_buf && cmd_log->response_buf_len) {
-            DRVSIM_LOG("response buffer:\n");
             sim_hex_dump(cmd_log->response_buf,
                 cmd_log->response_buf_len > g_sim_config.log_dump_adminq_completion_len ?
                     g_sim_config.log_dump_adminq_completion_len : cmd_log->response_buf_len);
@@ -32,7 +32,7 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
 
         switch (cmd_log->cmd.opc) {
             case SPDK_NVME_OPC_IDENTIFY:
-                DRVSIM_LOG("IDENTIFY completion\n");
+                DRVSIM_LOG("IDENTIFY completion %u\n", cmd_log->cmd.cdw10);
                 switch(cmd_log->cmd.cdw10) {
                     
                     case SPDK_NVME_IDENTIFY_CTRLR:
@@ -44,10 +44,12 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
                         break;
 
                     default:
+                        DRVSIM_LOG("Unknown IDENTIFY response\n");
                         DRVSIM_LOG("do not know how to process cdw10 = %u for OPC IDENTIFY (6)\n",
                             cmd_log->cmd.cdw10);
+                        break;
                 } /* switch cdw10 */
-            break;
+                break;
 
             case SPDK_NVME_OPC_SET_FEATURES:
                 DRVSIM_NOT_IMPLEMENTED_BENIGN("SET Features completion - processing not implemented\n");
@@ -138,19 +140,35 @@ static void sim_process_completion_identify_controller(struct sim_cmd_log_entry_
 static void sim_process_completion_identify_namespace(struct sim_cmd_log_entry_s *cmd_log)
 {
     uint32_t ns_id = cmd_log->cmd.nsid;
-    namespace_t *n = &cmd_log->qpair->parent_controller->namespaces[ns_id - 1];
-    struct spdk_nvme_ns_data *resp = (struct spdk_nvme_ns_data *)cmd_log->response_buf;
 
+    DRVSIM_LOG("Processing completion with cmd_id 0x%x, status code %u, ns_id %u\n",
+                    cmd_log->cpl.cid, cmd_log->cpl.status.sc, ns_id);
+ 
     if (spdk_nvme_cpl_is_error(&cmd_log->cpl)) {
-        n->state = SIM_NS_STATE_IDENTIFY_FAILED;
+        if (ns_id > 0 && ns_id <= cmd_log->qpair->parent_controller->num_namespaces) {
+            /* if the ns_id was in range, we can get the NS's state to reflect it */
+            cmd_log->qpair->parent_controller->namespaces[ns_id - 1].state =
+                                                    SIM_NS_STATE_IDENTIFY_FAILED;
+        }
+
         DRVSIM_LOG("sc %u, sct %u => error (should be SUCCESS, GENERIC SUCCESS), no further processing\n",
             cmd_log->cpl.status.sc, cmd_log->cpl.status.sct);
+
         return;
     } else if (cmd_log->response_buf_len < sizeof(struct spdk_nvme_ns_data)) {
         DRVSIM_LOG("buffer of len %lu too small to parse as id-ns response (min %lu)\n",
             cmd_log->response_buf_len, sizeof(struct spdk_nvme_ns_data));
-            return;
+
+        return;
     }
+
+    DRVSIM_ASSERT((ns_id > 0 && ns_id <= cmd_log->qpair->parent_controller->num_namespaces),
+                        "ns_id %u, out of range, total %u on ctrlr %p\n",
+                        ns_id, cmd_log->qpair->parent_controller->num_namespaces,
+                        cmd_log->qpair->parent_controller);
+
+    namespace_t *n = &cmd_log->qpair->parent_controller->namespaces[ns_id - 1];
+    struct spdk_nvme_ns_data *resp = (struct spdk_nvme_ns_data *)cmd_log->response_buf;
 
     log_ctrlr_completion_buf_id_namespace(cmd_log);
 
