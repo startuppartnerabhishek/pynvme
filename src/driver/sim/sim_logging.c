@@ -130,6 +130,9 @@ void log_ctrlr_completion_buf_id_namespace(sim_cmd_log_entry_t *cmd_log_entry)
     LOG_FIELD_LONGINT(resp, nsze, "Size");
     LOG_FIELD_LONGINT(resp, ncap, "Capacity");
     LOG_FIELD_LONGINT(resp, nuse, "Utilization");
+    LOG_FIELD_INT(resp, flbas.format, "flbas.Format");
+    LOG_FIELD_INT(resp, flbas.extended, "flbas.Extended");
+    LOG_FIELD_HEX(resp, lbaf, "LBAF");
     LOG_FIELD_HEX(resp, nguid, "NGUN - Namespace Globally Unique ID");
 
     uuid_unparse((unsigned char *)&resp->nguid[0], decoded_nguid);

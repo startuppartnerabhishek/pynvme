@@ -232,22 +232,6 @@ int qpair_get_id(qpair_t* q)
   return q ? q->id : 0;
 }
 
-bool ns_verify_enable(struct spdk_nvme_ns* ns, bool enable)
-{
-  crc_table_t* crc_table = (crc_table_t*)ns->crc_table;
-
-  SPDK_INFOLOG(SPDK_LOG_NVME, "enable inline data verify: %d\n", enable);
-
-  if (crc_table != NULL)
-  {
-    // crc is created, so verify is possible
-    crc_table->enabled = enable;
-    return true;
-  }
-
-  return false;
-}
-
 void buffer_pattern_init(void *buf, size_t bytes, uint32_t ptype, uint32_t pvalue)
 {
   uint32_t pattern = 0;
@@ -270,10 +254,12 @@ void buffer_pattern_init(void *buf, size_t bytes, uint32_t ptype, uint32_t pvalu
     pattern = 0;
   }
 
+#ifndef SIM_MODE
   // set the buffer by 32-bit pattern
   //spdk_dma_zmalloc has set the buffer all-zero already
   if (pattern != 0)
   {
+#endif
     uint32_t* ptr = buf;
 
     // left remaining unaligned bytes unset
@@ -281,7 +267,9 @@ void buffer_pattern_init(void *buf, size_t bytes, uint32_t ptype, uint32_t pvalu
     {
       ptr[i] = pattern;
     }
+#ifndef SIM_MODE
   }
+#endif
 
   // fill random data according to the percentage
   if (ptype == 0xbeef)

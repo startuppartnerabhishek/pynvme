@@ -60,6 +60,7 @@ static int nvme_send_cmd_raw_internal(
                         spdk_nvme_cmd_cb cb_fn,
                         void* cb_arg,
                         bool free_buf_on_completion_processing);
+static void sim_ctrlr_get_num_queues_done(ctrlr_t *ctrlr, struct spdk_nvme_cpl *cpl);
 
 ////module: qpair
 ///////////////////////////////
@@ -131,7 +132,7 @@ static void wait_for_all_adminq_completions(ctrlr_t *ctrlr)
 static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_array_idx)
 {
     int ret;
-    sim_nvme_ns_t *n = &ctrlr->namespaces[ns_array_idx];
+    namespace_t *n = &ctrlr->namespaces[ns_array_idx];
     void *buf;
     uint64_t phys_addr;
     struct spdk_nvme_cmd cmd = {0};
@@ -195,11 +196,13 @@ int nvme_set_ns(ctrlr_t *ctrlr)
     return ret;
 }
 
-struct spdk_nvme_ns* nvme_get_ns(ctrlr_t* ctrlr,
-                                 uint32_t nsid)
+namespace_t* nvme_get_ns(ctrlr_t* ctrlr, uint32_t nsid)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return NULL;
+	if (nsid < 1 || nsid > ctrlr->num_namespaces) {
+		return NULL;
+	}
+
+	return &ctrlr->namespaces[nsid - 1];
 }
 
 static void drvsim_completion_callback(void *cb_args, nvme_ctrlr_completion_t *cmpl)
@@ -645,29 +648,60 @@ void nvme_register_timeout_cb(ctrlr_t* ctrlr,
   return;
 }
 
-struct spdk_nvme_ns* ns_init(ctrlr_t* ctrlr,
+////module: namespace
+///////////////////////////////
+
+namespace_t* ns_init(ctrlr_t* ctrlr,
                              uint32_t nsid,
                              uint64_t nlba_verify)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return NULL;
+    namespace_t *ns = &ctrlr->namespaces[nsid - 1];
+
+    assert(ctrlr != NULL);
+    assert(nsid > 0);
+    assert(ns != NULL);
+    assert(nsid <= ctrlr->num_namespaces);
+
+    // ns_table_init not implemented in sim till we start doing IOs
+#if 0
+    uint64_t nsze = spdk_nvme_ns_get_num_sectors(ns);
+    if (nlba_verify > 0)
+    {
+        // limit verify area to save memory usage
+        nsze = MIN(nsze, nlba_verify);
+    }
+
+    if (0 != ns_table_init(ns, sizeof(uint32_t)*nsze))
+    {
+        return NULL;
+    }
+#endif
+
+    DRVSIM_LOG("ctrlr %p, nsid %d, ns %p\n", ctrlr, nsid, ns);
+    return ns;
 }
 
-int ns_refresh(struct spdk_nvme_ns *ns, uint32_t id,
+int ns_refresh(namespace_t *ns, uint32_t id,
                ctrlr_t *ctrlr)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
   return DRVSIM_RETCODE_FAILURE;
 }
 
-uint32_t ns_get_sector_size(struct spdk_nvme_ns* ns)
+uint32_t ns_get_sector_size(namespace_t* ns)
+{
+  return ns->sector_size;
+}
+
+bool ns_verify_enable(namespace_t* ns, bool enable)
 {
   DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return 0;
+
+  return false;
 }
 
 int ns_cmd_io(uint8_t opcode,
-              struct spdk_nvme_ns* ns,
+              namespace_t* ns,
               qpair_t* qpair,
               void* buf,
               size_t len,
@@ -684,10 +718,13 @@ int ns_cmd_io(uint8_t opcode,
   return DRVSIM_RETCODE_FAILURE;
 }
 
-int ns_fini(struct spdk_nvme_ns* ns)
+int ns_fini(namespace_t* ns)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return DRVSIM_RETCODE_FAILURE;
+  // 'ns_table_fini(ns);' not implemented till we start doing IOs on the namespace
+
+  // driver.c does not cleanup the ns itself, so for us there is nothing else to do
+
+  return DRVSIM_RETCODE_SUCCESS;
 }
 
 void nvme_bar_remap(ctrlr_t* ctrlr)
@@ -962,22 +999,43 @@ void *buffer_init(size_t bytes, uint64_t *phys_addr,
         return buf;
     }
 
+    g_sim_config.p_default_controller->num_allocated_buffers++;
+
+    DRVSIM_LOG("Intilializing allocated buffer %p, ptype %u, pvalue 0x%x\n",
+                    buf, ptype, pvalue);
+
     buffer_pattern_init(buf, bytes, ptype, pvalue);
+
+    // sim_hex_dump(buf, bytes);
 
     return buf;
 }
 
 void buffer_fini(void* buf)
 {
-    DRVSIM_ASSERT((g_sim_config.p_default_controller && g_sim_config.p_default_controller->ctrlr_api_handle),
-        "malformed/absent default controller %p\n", g_sim_config.p_default_controller);
+    ctrlr_t *ctrlr = g_sim_config.p_default_controller;
+
+    if (!ctrlr) {
+        // do we have a backup, and does it have buffers outstanding?
+        ctrlr = g_sim_config.p_most_recent_cleaned_up_default_ctrlr;
+
+        DRVSIM_ASSERT(ctrlr->num_allocated_buffers != ctrlr->num_freed_buffers,
+            "backup ctrlr %p does not have outstanding allocs\n", ctrlr);
+    }
+
+    DRVSIM_ASSERT((ctrlr && ctrlr->ctrlr_api_handle),
+        "malformed/absent default controller %p, or backup %p, using %p\n",
+            g_sim_config.p_default_controller,
+            g_sim_config.p_most_recent_cleaned_up_default_ctrlr, ctrlr);
 
     if (g_sim_config.log_buf_alloc_free) {
         DRVSIM_LOG("buf = %p, api-handle %p\n",
             buf, g_sim_config.p_default_controller->ctrlr_api_handle);
     }
 
-    nvme_driver_buffer_free(g_sim_config.p_default_controller->ctrlr_api_handle, buf);
+    nvme_driver_buffer_free(ctrlr->ctrlr_api_handle, buf);
+
+    ctrlr->num_freed_buffers++;
 
     return;
 }
@@ -991,10 +1049,69 @@ int driver_fini(void)
     return DRVSIM_RETCODE_SUCCESS;
 }
 
+static void sim_ctrlr_get_num_queues_done(ctrlr_t *ctrlr, struct spdk_nvme_cpl *cpl)
+{
+    /******** (START) from nvme_ctrlr_get_num_queues_done ******/
+	uint32_t cq_allocated, sq_allocated, min_allocated;
+
+	if (spdk_nvme_cpl_is_error(cpl)) {
+		DRVSIM_LOG("Get Features - Number of Queues failed!\n");
+		ctrlr->opts.num_io_queues = 0;
+	} else {
+		/*
+		 * Data in cdw0 is 0-based.
+		 * Lower 16-bits indicate number of submission queues allocated.
+		 * Upper 16-bits indicate number of completion queues allocated.
+		 */
+		sq_allocated = (cpl->cdw0 & 0xFFFF) + 1;
+		cq_allocated = (cpl->cdw0 >> 16) + 1;
+
+		/*
+		 * For 1:1 queue mapping, set number of allocated queues to be minimum of
+		 * submission and completion queues.
+		 */
+		min_allocated = spdk_min(sq_allocated, cq_allocated);
+
+		/* Set number of queues to be minimum of requested and actually allocated. */
+		ctrlr->opts.num_io_queues = spdk_min(min_allocated, ctrlr->opts.num_io_queues);
+	}
+
+/* for now - this path does not use IO-queues */
+#if 0
+
+	ctrlr->free_io_qids = spdk_bit_array_create(ctrlr->opts.num_io_queues + 1);
+	if (ctrlr->free_io_qids == NULL) {
+		nvme_ctrlr_set_state(ctrlr, NVME_CTRLR_STATE_ERROR, NVME_TIMEOUT_INFINITE);
+		return;
+	}
+
+	/* Initialize list of free I/O queue IDs. QID 0 is the admin queue. */
+	spdk_bit_array_clear(ctrlr->free_io_qids, 0);
+	for (i = 1; i <= ctrlr->opts.num_io_queues; i++) {
+		spdk_bit_array_set(ctrlr->free_io_qids, i);
+	}
+	nvme_ctrlr_set_state(ctrlr, NVME_CTRLR_STATE_CONSTRUCT_NS,
+			     ctrlr->opts.admin_timeout_ms);
+#endif
+
+    /******** (END) from nvme_ctrlr_get_num_queues_done ******/
+
+	// nvme_ctrlr_set_state(ctrlr, NVME_CTRLR_STATE_READY, NVME_TIMEOUT_INFINITE);
+
+    return;
+}
+
 void driver_init_num_queues(ctrlr_t* ctrlr, uint32_t cdw0)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return;
+    struct spdk_nvme_cpl cpl;
+
+    DRVSIM_LOG("ctrlr %p, cdw0 0x%x\n", ctrlr, cdw0);
+
+    memset(&cpl, 0, sizeof(cpl));
+    cpl.cdw0 = cdw0;
+
+    sim_ctrlr_get_num_queues_done(ctrlr, &cpl);
+    return;
 }
 
 int driver_init(void)

@@ -35,7 +35,7 @@ do {                                        \
 #define DRVSIM_ASSERT(COND, _FMT_, ...)                 \
 do {                                                    \
     if (!(COND)) {                                      \
-        DRVSIM_FATAL_ERROR("SIM SSERTION FAILED ---> " _FMT_, ##__VA_ARGS__);       \
+        DRVSIM_FATAL_ERROR("SIM ASSERTION FAILED ---> " _FMT_, ##__VA_ARGS__);       \
     }                                                   \
 } while (0)
 

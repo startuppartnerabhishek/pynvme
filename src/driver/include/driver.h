@@ -76,7 +76,6 @@
 #define DCFG_IOW_TERM         (BIT(4))
 
 
-typedef struct spdk_nvme_ns namespace;
 typedef struct spdk_nvme_cpl cpl;
 
 typedef void (*cmd_cb_func)(void* cb_arg,
@@ -89,6 +88,7 @@ typedef void (*cmd_cb_func)(void* cb_arg,
 typedef struct spdk_nvme_ctrlr ctrlr_t;
 typedef struct spdk_pci_device pcie_t;
 typedef struct spdk_nvme_qpair qpair_t;
+typedef struct spdk_nvme_ns namespace_t;
 
 #else
 
@@ -136,8 +136,9 @@ typedef struct sim_nvme_ns_s {
     unsigned int                size;
     unsigned int                capacity;
     unsigned int                utilization;
+    unsigned int                sector_size;
     unsigned char			    nguid[16];
-} sim_nvme_ns_t;
+} namespace_t;
 
 typedef struct sim_nvme_qpair_s {
     struct sim_nvme_qpair_s *prev;
@@ -155,12 +156,15 @@ typedef struct sim_nvme_qpair_s {
 } qpair_t;
 
 typedef struct sim_nvme_ctrlr_s {
-    void                *ctrlr_api_handle;
-    qpair_t             *adminq;
-    qpair_t             *other_queues_list;
-    unsigned int        num_namespaces;
-    sim_nvme_ns_t       *namespaces;
-    pthread_mutex_t lock;
+    void                            *ctrlr_api_handle;
+    qpair_t                         *adminq;
+    qpair_t                         *other_queues_list;
+    unsigned int                    num_namespaces;
+    namespace_t                     *namespaces;
+    pthread_mutex_t                 lock;
+    struct spdk_nvme_ctrlr_opts	    opts;
+    unsigned int                    num_allocated_buffers;
+    unsigned int                    num_freed_buffers;
 } ctrlr_t;
 
 typedef ctrlr_t pcie_t; // in SIM MODE, a controller also provides PCIE access
@@ -262,7 +266,7 @@ struct cmd_log_table_t {
   uint16_t dummy[53];
 };
 
-extern int ioworker_entry(namespace* ns,
+extern int ioworker_entry(namespace_t* ns,
                           qpair_t *qpair,
                           ioworker_args* args,
                           ioworker_rets* rets);
@@ -321,9 +325,9 @@ extern int nvme_send_cmd_raw(ctrlr_t * ctrlr,
                              cmd_cb_func cb_fn,
                              void* cb_arg);
 extern int nvme_cpl_is_error(const struct spdk_nvme_cpl* cpl);
-extern namespace* nvme_get_ns(ctrlr_t * ctrlr, unsigned int nsid);
+extern namespace_t* nvme_get_ns(ctrlr_t * ctrlr, unsigned int nsid);
 extern void crc32_unlock_all(ctrlr_t * ctrlr);
-extern uint64_t crc32_skip_uncorr(struct spdk_nvme_ns* ns, uint64_t slba, uint32_t nlba);
+extern uint64_t crc32_skip_uncorr(namespace_t* ns, uint64_t slba, uint32_t nlba);
 
 extern void nvme_register_timeout_cb(ctrlr_t * ctrlr,
                                      spdk_nvme_timeout_cb timeout_cb,
@@ -346,11 +350,11 @@ extern uint32_t qpair_get_latest_latency(qpair_t* q,
 extern int qpair_get_id(qpair_t* q);
 extern int qpair_free(qpair_t* q);
 
-extern namespace* ns_init(ctrlr_t * c, unsigned int nsid, unsigned long nlba_verify);
-extern int ns_refresh(namespace* ns, uint32_t id, ctrlr_t *ctrlr);
-extern bool ns_verify_enable(struct spdk_nvme_ns* ns, bool enable);
+extern namespace_t* ns_init(ctrlr_t * c, unsigned int nsid, unsigned long nlba_verify);
+extern int ns_refresh(namespace_t* ns, uint32_t id, ctrlr_t *ctrlr);
+extern bool ns_verify_enable(namespace_t* ns, bool enable);
 extern int ns_cmd_io(uint8_t opcode,
-                     namespace* ns,
+                     namespace_t* ns,
                      qpair_t *qpair,
                      void *buf,
                      size_t len,
@@ -362,9 +366,9 @@ extern int ns_cmd_io(uint8_t opcode,
                      unsigned int dword13, 
                      unsigned int dword14, 
                      unsigned int dword15);
-extern uint32_t ns_get_sector_size(namespace* ns);
-extern uint64_t ns_get_num_sectors(namespace* ns);
-extern int ns_fini(namespace* ns);
+extern uint32_t ns_get_sector_size(namespace_t* ns);
+extern uint64_t ns_get_num_sectors(namespace_t* ns);
+extern int ns_fini(namespace_t* ns);
 
 extern char* log_buf_dump(const char* header, const void* buf, size_t len, size_t base);
 extern void log_cmd_dump(qpair_t* qpair, size_t count);

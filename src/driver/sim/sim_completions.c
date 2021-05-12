@@ -126,11 +126,11 @@ static void sim_process_completion_identify_controller(struct sim_cmd_log_entry_
     ctrlr_t *ctrlr = cmd_log->qpair->parent_controller;
 
     if (resp->nn > ctrlr->num_namespaces) {
-        ctrlr->namespaces = (sim_nvme_ns_t *)realloc(ctrlr->namespaces, resp->nn * sizeof(sim_nvme_ns_t));
+        ctrlr->namespaces = (namespace_t *)realloc(ctrlr->namespaces, resp->nn * sizeof(namespace_t));
     }
 
     ctrlr->num_namespaces = resp->nn;
-    memset(ctrlr->namespaces, 0, resp->nn * sizeof(sim_nvme_ns_t));
+    memset(ctrlr->namespaces, 0, resp->nn * sizeof(namespace_t));
 
     return;
 }
@@ -138,7 +138,7 @@ static void sim_process_completion_identify_controller(struct sim_cmd_log_entry_
 static void sim_process_completion_identify_namespace(struct sim_cmd_log_entry_s *cmd_log)
 {
     uint32_t ns_id = cmd_log->cmd.nsid;
-    sim_nvme_ns_t *n = &cmd_log->qpair->parent_controller->namespaces[ns_id - 1];
+    namespace_t *n = &cmd_log->qpair->parent_controller->namespaces[ns_id - 1];
     struct spdk_nvme_ns_data *resp = (struct spdk_nvme_ns_data *)cmd_log->response_buf;
 
     if (spdk_nvme_cpl_is_error(&cmd_log->cpl)) {
@@ -159,7 +159,12 @@ static void sim_process_completion_identify_namespace(struct sim_cmd_log_entry_s
     n->size = resp->nsze;
     n->capacity = resp->ncap;
     n->utilization = resp->nuse;
+    n->sector_size = 1 << resp->lbaf[resp->flbas.format].lbads;
+
     memcpy(&n->nguid, &resp->nguid, sizeof(n->nguid));
+
+    DRVSIM_LOG("Namespace %p with ns_id %d, saved with sector_size %u\n",
+                    n, ns_id, n->sector_size);
 
     return;
 }
