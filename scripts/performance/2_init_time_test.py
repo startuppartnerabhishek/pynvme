@@ -60,7 +60,7 @@ def do_power_cycle(dirty, subsystem, nvme0n1, nvme0):
     # first read time
     start_time = time.time()
     q = d.Qpair(nvme0, 16)
-    b = d.Buffer(512)
+    b = d.Buffer(nvme0, 512)
     lba = nvme0n1.id_data(7, 0) - 1
     nvme0n1.read(q, b, lba).waitdone()
     logging.info("media ready time %.6f sec" % (time.time()-start_time))

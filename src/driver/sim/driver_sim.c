@@ -61,6 +61,7 @@ static int nvme_send_cmd_raw_internal(
                         void* cb_arg,
                         bool free_buf_on_completion_processing);
 static void sim_ctrlr_get_num_queues_done(ctrlr_t *ctrlr, struct spdk_nvme_cpl *cpl);
+static void free_controller(ctrlr_t *ctrlr);
 
 ////module: qpair
 ///////////////////////////////
@@ -139,7 +140,7 @@ static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_array_idx)
     uint32_t *cmd_as_arr = (uint32_t *)&cmd;
     const size_t buf_size = sizeof(struct spdk_nvme_ns_data);
 
-    buf = buffer_init(buf_size, &phys_addr, 32, 0x00DDBA11);
+    buf = buffer_init(ctrlr, buf_size, &phys_addr, 32, 0x00DDBA11);
 
     /* what if we are racing with a completion for this namespace entry? */
 
@@ -154,7 +155,7 @@ static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_array_idx)
                         cmd.cdw11, cmd.cdw12, cmd.cdw13, cmd.cdw14, cmd.cdw15, NULL, NULL);
 
     if (DRVSIM_RETCODE_SUCCESS != ret) {
-        buffer_fini(buf);
+        buffer_fini(ctrlr, buf);
         n->state = SIM_NS_STATE_IDENTIFY_FAILED;
 
         return ret;
@@ -575,7 +576,7 @@ static int nvme_send_cmd_raw_internal(
         free_log_entry(completion_ctx);
 
         if (free_buf_on_completion_processing) {
-            buffer_fini(buf);
+            buffer_fini(ctrlr, buf);
         }
 
         return ret;
@@ -946,8 +947,6 @@ ctrlr_t* nvme_init(char * traddr, unsigned int port)
         return NULL;
     }
 
-    g_sim_config.p_default_controller = ctrlr_opaque_handle;
-
     pthread_mutex_init(&ctrlr_opaque_handle->lock, NULL);
 
     DRVSIM_LOG("Returning Driver-API handle %p (wraps api_handle %p)\n",
@@ -956,21 +955,46 @@ ctrlr_t* nvme_init(char * traddr, unsigned int port)
     return ctrlr_opaque_handle;
 }
 
-int nvme_fini(ctrlr_t* ctrlr)
+static void free_controller(ctrlr_t *ctrlr)
 {
-    DRVSIM_ASSERT((ctrlr && ctrlr->ctrlr_api_handle), "invalid ctrlr %p or uninitialized api handle\n", ctrlr);
+    pthread_mutex_destroy(&ctrlr->lock);
 
-    deallocate_driver(ctrlr->ctrlr_api_handle);
-
-    if (g_sim_config.p_default_controller == ctrlr) {
-        g_sim_config.p_default_controller = NULL;
+    if (ctrlr->num_namespaces > 0) {
+        free(ctrlr->namespaces);
     }
 
-    pthread_mutex_destroy(&ctrlr->lock);
+    deallocate_driver(ctrlr->ctrlr_api_handle);
 
     free(ctrlr);
 
     DRVSIM_LOG("Driver resources freed\n");
+
+    return;
+}
+
+int nvme_fini(ctrlr_t* ctrlr)
+{
+    DRVSIM_ASSERT((ctrlr && ctrlr->ctrlr_api_handle), "invalid ctrlr %p or uninitialized api handle\n", ctrlr);
+
+#if 0
+    DRVSIM_ASSERT((ctrlr->num_alloocated_buffers == ctrlr->num_freed_buffers),
+        "ctrlr %p has oustanding allocated buffers, alloc %u, free %u\n",
+        ctrlr, ctrlr->num_alloocated_buffers, ctrlr->num_freed_buffers);
+#endif
+
+    // maybe we should remove the assert, and allow this ctrlr to exist for some time
+
+    if (ctrlr->num_allocated_buffers != ctrlr->num_freed_buffers) {
+        DRVSIM_LOG_TO_FILE(stderr,
+            "WARNING: ctrlr %p has oustanding allocated buffers, alloc %u, free %u\n",
+            ctrlr, ctrlr->num_allocated_buffers, ctrlr->num_freed_buffers);
+        
+        ctrlr->is_destroyed = true;
+
+        return DRVSIM_RETCODE_SUCCESS;
+    }
+
+    free_controller(ctrlr);
 
     return DRVSIM_RETCODE_SUCCESS;
 }
@@ -978,28 +1002,26 @@ int nvme_fini(ctrlr_t* ctrlr)
 ////module: buffer
 ///////////////////////////////
 
-void *buffer_init(size_t bytes, uint64_t *phys_addr,
+void *buffer_init(ctrlr_t *ctrlr, size_t bytes, uint64_t *phys_addr,
                   uint32_t ptype, uint32_t pvalue)
 {
     void *buf;
 
-    DRVSIM_ASSERT((g_sim_config.p_default_controller && g_sim_config.p_default_controller->ctrlr_api_handle),
-        "malformed/absent default controller %p\n", g_sim_config.p_default_controller);
+    DRVSIM_ASSERT((ctrlr && ctrlr->ctrlr_api_handle),
+        "malformed/absent controller %p\n", ctrlr);
 
-    buf = nvme_driver_buffer_alloc(
-            g_sim_config.p_default_controller->ctrlr_api_handle,
-                bytes, phys_addr);
+    buf = nvme_driver_buffer_alloc(ctrlr->ctrlr_api_handle, bytes, phys_addr);
 
     if (g_sim_config.log_buf_alloc_free) {
         DRVSIM_LOG("buf = %p, api-handle %p, size %lu\n",
-            buf, g_sim_config.p_default_controller->ctrlr_api_handle, bytes);
+            buf, ctrlr->ctrlr_api_handle, bytes);
     }
 
     if (!buf) {
         return buf;
     }
 
-    g_sim_config.p_default_controller->num_allocated_buffers++;
+    ctrlr->num_allocated_buffers++;
 
     DRVSIM_LOG("Intilializing allocated buffer %p, ptype %u, pvalue 0x%x\n",
                     buf, ptype, pvalue);
@@ -1011,31 +1033,24 @@ void *buffer_init(size_t bytes, uint64_t *phys_addr,
     return buf;
 }
 
-void buffer_fini(void* buf)
+void buffer_fini(ctrlr_t *ctrlr, void* buf)
 {
-    ctrlr_t *ctrlr = g_sim_config.p_default_controller;
-
-    if (!ctrlr) {
-        // do we have a backup, and does it have buffers outstanding?
-        ctrlr = g_sim_config.p_most_recent_cleaned_up_default_ctrlr;
-
-        DRVSIM_ASSERT(ctrlr->num_allocated_buffers != ctrlr->num_freed_buffers,
-            "backup ctrlr %p does not have outstanding allocs\n", ctrlr);
-    }
-
     DRVSIM_ASSERT((ctrlr && ctrlr->ctrlr_api_handle),
-        "malformed/absent default controller %p, or backup %p, using %p\n",
-            g_sim_config.p_default_controller,
-            g_sim_config.p_most_recent_cleaned_up_default_ctrlr, ctrlr);
+        "malformed/absent controller %p\n", ctrlr);
 
     if (g_sim_config.log_buf_alloc_free) {
-        DRVSIM_LOG("buf = %p, api-handle %p\n",
-            buf, g_sim_config.p_default_controller->ctrlr_api_handle);
+        DRVSIM_LOG("buf = %p, ctrlr %p, api-handle %p\n",
+                buf, ctrlr, ctrlr->ctrlr_api_handle);
     }
 
     nvme_driver_buffer_free(ctrlr->ctrlr_api_handle, buf);
 
     ctrlr->num_freed_buffers++;
+
+    if (ctrlr->num_freed_buffers == ctrlr->num_allocated_buffers && ctrlr->is_destroyed) {
+        // a free was deferred, probably becausee of a test bug
+        free_controller(ctrlr);
+    }
 
     return;
 }
@@ -1043,8 +1058,6 @@ void buffer_fini(void* buf)
 int driver_fini(void)
 {
     // clear global shared data
-
-    g_sim_config.p_default_controller = NULL; // to prevent a leak, the test should have cleaned up correctly
 
     return DRVSIM_RETCODE_SUCCESS;
 }

@@ -43,8 +43,8 @@ from conftest import globalNvmeModule as d
 # intuitive, spec, qpair, vscode, debug, cmdlog, assert
 def test_hello_world(nvme0, nvme0n1, qpair):
     # prepare data buffer and IO queue
-    read_buf = d.Buffer()
-    write_buf = d.Buffer()
+    read_buf = d.Buffer(nvme0)
+    write_buf = d.Buffer(nvme0)
     write_buf[10:21] = b'hello world'
 
     # send write and read command
@@ -105,7 +105,7 @@ def subprocess_trim(pciaddr, seconds):
     nvme0 = d.Controller(pcie, True)
     nvme0n1 = d.Namespace(nvme0)
     q = d.Qpair(nvme0, 8)
-    buf = d.Buffer(4096)
+    buf = d.Buffer(nvme0, 4096)
     buf.set_dsm_range(0, 8, 8)
 
     # send trim commands
@@ -128,7 +128,7 @@ def test_ioworker_with_temperature_and_trim(nvme0, nvme0n1):
     p.start()
 
     # start read/write ioworker and admin commands
-    smart_log = d.Buffer(512, "smart log")
+    smart_log = d.Buffer(nvme0, 512, "smart log")
     with nvme0n1.ioworker(io_size=256,
                           lba_random=False,
                           read_percentage=0,
@@ -226,7 +226,7 @@ def test_different_io_size_and_count(nvme0, nvme0n1, qpair,
     # allcoate all DMA buffers for IO commands
     bufs = []
     for i in range(io_count):
-        bufs.append(d.Buffer(lba_count*512))
+        bufs.append(d.Buffer(nvme0, lba_count*512))
 
     # send and reap all IO command dwords
     for i in range(io_count):
@@ -238,7 +238,7 @@ def test_different_io_size_and_count(nvme0, nvme0n1, qpair,
 def test_fused_operations(nvme0, nvme0n1):
     # create qpair and buffer for IO commands
     q = d.Qpair(nvme0, 10)
-    b = d.Buffer()
+    b = d.Buffer(nvme0)
 
     # separate compare and write commands
     nvme0n1.write(q, b, 8).waitdone()
@@ -313,7 +313,7 @@ def test_sanitize_operations_basic(nvme0, nvme0n1):  #L8
     nvme0.sanitize().waitdone()  #L13
 
     # check sanitize status in log page
-    buf = d.Buffer(4096)  #L16
+    buf = d.Buffer(nvme0, 4096)  #L16
     with pytest.warns(UserWarning, match="AER notification is triggered"):
         nvme0.getlogpage(0x81, buf, 20).waitdone()  #L17
         while buf.data(3, 2) & 0x7 != 1:  #L18
@@ -324,16 +324,16 @@ def test_sanitize_operations_basic(nvme0, nvme0n1):  #L8
 
 
 def test_buffer_read_write(nvme0, nvme0n1):
-    buf = d.Buffer(512, 'ascii table')  #L2
+    buf = d.Buffer(nvme0, 512, 'ascii table')  #L2
     logging.info("physical address of buffer: 0x%lx" % buf.phys_addr)  #L3
 
     for i in range(512):
         buf[i] = i%256  #L6
     print(buf.dump(128))  #L7
 
-    buf = d.Buffer(512, 'random', pvalue=100, ptype=0xbeef)  #L15
+    buf = d.Buffer(nvme0, 512, 'random', pvalue=100, ptype=0xbeef)  #L15
     print(buf.dump())
-    buf = d.Buffer(512, 'random', pvalue=100, ptype=0xbeef)  #L17
+    buf = d.Buffer(nvme0, 512, 'random', pvalue=100, ptype=0xbeef)  #L17
     print(buf.dump())
 
     qpair = d.Qpair(nvme0, 10)
@@ -447,7 +447,7 @@ def test_ioworker_fixed_iops(nvme0n1, iops):
 
 
 def test_dsm_trim(nvme0: d.Controller, nvme0n1: d.Namespace, qpair: d.Qpair):
-    trimbuf = d.Buffer(4096)
+    trimbuf = d.Buffer(nvme0, 4096)
 
     # DUT info
     logging.info("model number: %s" % nvme0.id_data(63, 24, str))
@@ -550,7 +550,7 @@ def test_init_nvme_customerized(pcie):
         while not (nvme0[0x1c]&0x1) == 1: pass
 
         # 7. identify controller
-        nvme0.identify(d.Buffer(4096)).waitdone()
+        nvme0.identify(d.Buffer(nvme0, 4096)).waitdone()
 
         # 8. create and identify all namespace
         nvme0.init_ns()
@@ -752,7 +752,7 @@ def test_reset_time(pcie):
         logging.info(time.time())
 
         # 7. identify controller
-        nvme0.identify(d.Buffer(4096)).waitdone()
+        nvme0.identify(d.Buffer(nvme0, 4096)).waitdone()
         logging.info(time.time())
 
         nvme0.setfeatures(0x7, cdw11=0x00ff00ff).waitdone()

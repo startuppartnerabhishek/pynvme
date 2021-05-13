@@ -69,7 +69,7 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
     }
 
     if (cmd_log->response_buf && cmd_log->free_buf_on_completion) {
-        buffer_fini(cmd_log->response_buf);
+        buffer_fini(cmd_log->qpair->parent_controller, cmd_log->response_buf);
     }
 
     return;

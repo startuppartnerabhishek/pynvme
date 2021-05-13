@@ -86,9 +86,9 @@ def test_two_namespace_basic(nvme0n1, nvme0, verify, tcp):
     nvme1n1 = d.Namespace(nvme1)
     q1 = d.Qpair(nvme0, 32)
     q2 = d.Qpair(nvme1, 64)
-    buf = d.Buffer(512)
-    buf1 = d.Buffer(512)
-    buf2 = d.Buffer(512)
+    buf = d.Buffer(nvme1, 512)
+    buf1 = d.Buffer(nvme1, 512)
+    buf2 = d.Buffer(nvme1, 512)
 
     nvme0n1.write_zeroes(q1, 11, 1).waitdone()
     nvme0n1.write_zeroes(q1, 22, 1).waitdone()

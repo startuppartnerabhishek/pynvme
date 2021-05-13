@@ -27,8 +27,6 @@ typedef struct sim_config_s {
     unsigned int log_buf_alloc_free;
     unsigned int max_log_entries_per_qpair;
     unsigned int log_dump_adminq_completion_len;
-    ctrlr_t *p_default_controller;
-    ctrlr_t *p_most_recent_cleaned_up_default_ctrlr;
 } sim_config_t;
 
 extern sim_config_t g_sim_config;

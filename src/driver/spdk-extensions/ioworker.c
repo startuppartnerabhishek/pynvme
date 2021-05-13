@@ -633,7 +633,7 @@ int ioworker_entry(struct spdk_nvme_ns* ns,
   STAILQ_INIT(&gctx.pending_io_list);
   uint32_t buffer_size = args->lba_size_max * sector_size;
   uint32_t pool_size = buffer_size * args->qdepth * 2;
-  void* buffer_pool = buffer_init(pool_size, NULL, args->ptype, args->pvalue);
+  void* buffer_pool = buffer_init(NULL, pool_size, NULL, args->ptype, args->pvalue);
   if (buffer_pool == NULL)
   {
     SPDK_WARNLOG("memory alloc fail, buffer pool size: %d\n", pool_size);
@@ -749,7 +749,7 @@ int ioworker_entry(struct spdk_nvme_ns* ns,
   rets->latency_average_us = gctx.total_latency_us/(rets->io_count_read+rets->io_count_nonread);
 
   //release buffer pool
-  buffer_fini(buffer_pool);
+  buffer_fini(NULL, buffer_pool);
 
   // handle cmdlog_list
   if (args->cmdlog_list_len != 0)
