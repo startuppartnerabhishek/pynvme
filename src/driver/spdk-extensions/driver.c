@@ -45,7 +45,7 @@ static uint64_t* g_driver_io_token_ptr = NULL;
 ////module: buffer
 ///////////////////////////////
 
-void* buffer_init(size_t bytes, uint64_t *phys_addr,
+void* buffer_init(ctrlr_t *_IGNORED_, size_t bytes, uint64_t *phys_addr,
                   uint32_t ptype, uint32_t pvalue)
 {
   void* buf = spdk_dma_zmalloc(bytes, 0x1000, NULL);
@@ -186,7 +186,7 @@ static inline int buffer_verify_data(struct spdk_nvme_ns* ns,
   return 0;
 }
 
-void buffer_fini(void* buf)
+void buffer_fini(ctrlr_t *_IGNORED_, void* buf)
 {
   SPDK_DEBUGLOG(SPDK_LOG_NVME, "buffer: free ptr at %p\n", buf);
   assert(buf != NULL);

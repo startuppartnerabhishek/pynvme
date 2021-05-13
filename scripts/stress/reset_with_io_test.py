@@ -55,7 +55,7 @@ def test_reset_within_ioworker(nvme0, subsystem, pcie, repeat):
     
     # get the unsafe shutdown count
     def power_cycle_count():
-        buf = d.Buffer(4096)
+        buf = d.Buffer(nvme0, 4096)
         nvme0.getlogpage(2, buf, 512).waitdone()
         return buf.data(115, 112)
     
@@ -93,7 +93,7 @@ def test_reset_within_ioworker(nvme0, subsystem, pcie, repeat):
     time.sleep(5)
     assert True == nvme0n1.verify_enable(True)
     logging.info(cmdlog_list[-10:])
-    read_buf = d.Buffer(256*512)
+    read_buf = d.Buffer(nvme0, 256*512)
     qpair = d.Qpair(nvme0, 10)
     for cmd in cmdlog_list:
         slba = cmd[0]

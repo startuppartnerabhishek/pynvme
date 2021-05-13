@@ -165,6 +165,7 @@ typedef struct sim_nvme_ctrlr_s {
     struct spdk_nvme_ctrlr_opts	    opts;
     unsigned int                    num_allocated_buffers;
     unsigned int                    num_freed_buffers;
+    bool                            is_destroyed;
 } ctrlr_t;
 
 typedef ctrlr_t pcie_t; // in SIM MODE, a controller also provides PCIE access
@@ -333,9 +334,9 @@ extern void nvme_register_timeout_cb(ctrlr_t * ctrlr,
                                      spdk_nvme_timeout_cb timeout_cb,
                                      unsigned int msec);
 
-extern void* buffer_init(size_t bytes, uint64_t *phys_addr,
+extern void* buffer_init(ctrlr_t *ctrlr, size_t bytes, uint64_t *phys_addr,
                          uint32_t ptype, uint32_t pvalue);
-extern void buffer_fini(void* buf);
+extern void buffer_fini(ctrlr_t *ctrlr, void* buf);
 
 extern qpair_t* qpair_create(ctrlr_t *c,
                            unsigned int prio,

@@ -152,11 +152,11 @@ cdef extern from "driver.h":
                                   timeout_cb_func timeout_cb,
                                   unsigned int msec)
 
-    void * buffer_init(size_t bytes,
+    void * buffer_init(ctrlr_t * c, size_t bytes,
                        unsigned long* phys_addr,
                        unsigned int ptype,
                        unsigned int pvalue)
-    void buffer_fini(void * buf)
+    void buffer_fini(ctrlr_t * c, void * buf)
 
     qpair_t * qpair_create(ctrlr_t * c,
                          unsigned int prio,

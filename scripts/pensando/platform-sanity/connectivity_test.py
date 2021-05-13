@@ -75,7 +75,7 @@ def test_nvme_identify_controller(pcie):
         while not (nvme0[0x1c]&0x1) == 1: pass
 
         # 7. identify controller
-        nvme0.identify(driverIntfObj.Buffer(4096)).waitdone()
+        nvme0.identify(driverIntfObj.Buffer(nvme0, 4096)).waitdone()
 
         # 8. create and identify all namespace
         nvme0.init_ns()

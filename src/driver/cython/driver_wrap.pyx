@@ -178,6 +178,7 @@ cdef class Buffer(object):
     """Buffer allocates memory in DPDK, so we can get its physical address for DMA. Data in buffer is clear to 0 in initialization.
 
     # Parameters
+        ctrlr (ctrlr_t *): controller which will be accessing the memory
         size (int): the size (in bytes) of the buffer. Default: 4096
         name (str): the name of the buffer. Default: 'buffer'
         pvalue (int): data pattern value. Default: 0
@@ -195,7 +196,7 @@ cdef class Buffer(object):
 
     # Examples
 ```python
-        >>> b = Buffer(1024, 'example')
+        >>> b = Buffer(nvme0, 1024, 'example')
         >>> b[0] = 0x5a
         >>> b[1:3] = [1, 2]
         >>> b[4:] = [10, 11, 12, 13]
@@ -233,8 +234,9 @@ cdef class Buffer(object):
     cdef char* name
     cdef unsigned long phys_addr
     cdef unsigned int offset
+    cdef d.ctrlr_t * _ctrlr
 
-    def __cinit__(self, size=4096, name="buffer", pvalue=0, ptype=0):
+    def __cinit__(self, Controller nvme, size=4096, name="buffer", pvalue=0, ptype=0):
         assert size > 0, "0 is not valid size"
 
         # copy python string to c string
@@ -249,7 +251,8 @@ cdef class Buffer(object):
         self._size = size
         self.prp_size = size
         self.offset = 0
-        self.ptr = d.buffer_init(size, &self.phys_addr, ptype, pvalue)
+        self._ctrlr = nvme.pcie._ctrlr
+        self.ptr = d.buffer_init(self._ctrlr, size, &self.phys_addr, ptype, pvalue)
         if self.ptr is NULL:
             raise MemoryError()
 
@@ -258,7 +261,7 @@ cdef class Buffer(object):
             PyMem_Free(self.name)
 
         if self.ptr is not NULL:
-            d.buffer_fini(self.ptr)
+            d.buffer_fini(self._ctrlr, self.ptr)
 
     @property
     def data_head(self):
@@ -878,7 +881,7 @@ cdef class Controller(object):
         False
         >>> n.supports(0x80)
         True
-        >>> id_buf = Buffer()
+        >>> id_buf = Buffer(n)
         >>> n.identify().waitdone()
         >>> id_buf.dump(64)
         buffer
@@ -967,12 +970,12 @@ cdef class Controller(object):
                     raise NvmeEnumerateError("csts.rdy timeout after setting cc.en")
 
             # 7. identify controller and all namespaces
-            nvme0.identify(Buffer(4096)).waitdone()
+            nvme0.identify(Buffer(nvme0, 4096)).waitdone()
             if nvme0.init_ns() < 0:
                 # first try fail: warning, and retry
                 warnings.warn("init namespaces first warning")
                 time.sleep(1)
-                nvme0.identify(Buffer(4096)).waitdone()
+                nvme0.identify(Buffer(nvme0, 4096)).waitdone()
                 if nvme0.init_ns() < 0:
                     # second try fail: error
                     raise NvmeEnumerateError("retry init namespaces failed")
@@ -1138,7 +1141,7 @@ cdef class Controller(object):
         """
 
         assert opcode < 256*2 # *2 for nvm command set
-        logpage_buf = Buffer(4096)
+        logpage_buf = Buffer(self, 4096)
         self.getlogpage(5, logpage_buf).waitdone()
         return logpage_buf.data(opcode*4)&0x01 != 0
 
@@ -1265,7 +1268,7 @@ cdef class Controller(object):
             (int or str): the data in the specified field
         """
 
-        id_buf = Buffer(4096)
+        id_buf = Buffer(self, 4096)
         self.identify(id_buf, nsid=nsid, cns=cns, cntid=cntid, csi=csi, nvmsetid=nvmsetid).waitdone()
         return id_buf.data(byte_end, byte_begin, type)
 
@@ -1568,7 +1571,7 @@ cdef class Controller(object):
 
         logging.info("download firmware image %s to slot %d and activate" % (filename, slot))
         with open(filename, "rb") as f:
-            buf = Buffer(4096)
+            buf = Buffer(self, 4096)
             for i, chunk in enumerate(iter(lambda: f.read(4096), b'')):
                 buf[:] = chunk
                 self.fw_download(buf, 4096*i).waitdone()

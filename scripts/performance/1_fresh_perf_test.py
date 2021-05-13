@@ -168,7 +168,7 @@ def test_fill_drive_random(nvme0, nvme0n1):
             
         # add temperature, °C
         import pytemperature
-        logpage_buf = d.Buffer(512)
+        logpage_buf = d.Buffer(nvme0, 512)
         nvme0.getlogpage(2, logpage_buf).waitdone()
         t = round(pytemperature.k2c(logpage_buf.data(2, 1)))
         logging.info(t)

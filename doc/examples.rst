@@ -18,8 +18,8 @@ Ex1: hello world
    # specify the class type of the fixture, so VSCode can give more docstring online
    def test_hello_world(nvme0, nvme0n1: d.Namespace):
        # create the buffers and fill data for read/write commands
-       read_buf = d.Buffer(512)
-       data_buf = d.Buffer(512)
+       read_buf = d.Buffer(nvme0, 512)
+       data_buf = d.Buffer(nvme0, 512)
        data_buf[10:21] = b'hello world'
 
        # create IO Qpair for read/write commands
@@ -131,7 +131,7 @@ Ex5: write drive and monitor temperature
    from pytemperature import k2c
    
    def test_ioworker_with_temperature(nvme0, nvme0n1):
-       smart_log = d.Buffer(512, "smart log")
+       smart_log = d.Buffer(nvme0, 512, "smart log")
 
        # start the ioworker for sequential writing in secondary process
        with nvme0n1.ioworker(io_size=256, lba_align=256,
@@ -196,7 +196,7 @@ Ex7: format and fused operations
 
        # create qpair and buffer for IO commands
        q = d.Qpair(nvme0, 10)
-       b = d.Buffer()
+       b = d.Buffer(nvme0)
        
        # separate compare and write commands
        nvme0n1.write(q, b, 8).waitdone()

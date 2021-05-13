@@ -27,7 +27,7 @@ In order to transfer data with NVMe devices, users need to allocate and provide 
 
 .. code-block:: python
 
-   buf = d.Buffer(512, "part of identify data")
+   buf = d.Buffer(nvme0, 512, "part of identify data")
    nvme.identify(buf).waitdone()
    # now, the buf contains the identify data
    print(buf[0:4])
@@ -106,7 +106,7 @@ When creating controller object, pynvme implements a default initialization proc
            nvme0[0x14] = 0x00460000
            nvme0[0x14] = 0x00460001
            while not (nvme0[0x1c]&0x1) == 1: pass
-           nvme0.identify(d.Buffer(4096)).waitdone()
+           nvme0.identify(d.Buffer(nvme0, 4096)).waitdone()
            nvme0.init_ns()
            nvme0.setfeatures(0x7, cdw11=0x00ff00ff).waitdone()
            nvme0.getfeatures(0x7).waitdone()
@@ -168,7 +168,7 @@ Here is an usual way to get controller's identify data:
 
 .. code-block:: python
 
-   buf = d.Buffer(4096, 'controller identify data')
+   buf = d.Buffer(nvme0, 4096, 'controller identify data')
    nvme0.identify(buf, 0, 1).waitdone()
    logging.info("model number: %s" % buf[24:63, 24])
 
@@ -405,7 +405,7 @@ With `Namespace`, `Qpair`, and `Buffer`, we can send IO commands to NVMe devices
 .. code-block:: python
 
    def test_write_lba_0(nvme0, nvme0n1):
-       buf = d.Buffer(512)
+       buf = d512)
        qpair = d.Qpair(nvme0, 16)
        nvme0n1.write(qpair, buf, 0).waitdone()
 
@@ -420,7 +420,7 @@ Dataset Management (e.g. deallocate, or trim) is another commonly used IO comman
 .. code-block:: python
 
    nvme0 = d.Controller(b'01:00.0')
-   buf = d.Buffer(4096)
+   buf = d.Buffer(nvme0, 4096)
    qpair = d.Qpair(nvme0, 8)
    nvme0n1 = d.Namespace(nvme0)
    buf.set_dsm_range(0, 0, 8)
@@ -623,7 +623,7 @@ Scripts can send NVMe commands accompanied with IOWorkers. In this example, the 
 .. code-block:: python
 
    def test_ioworker_with_temperature(nvme0, nvme0n1):
-       smart_log = d.Buffer(512, "smart log")
+       smart_log = d.Buffer(nvme0, 512, "smart log")
        with nvme0n1.ioworker(io_size=8, lba_align=16,
                              lba_random=True, qdepth=16,
                              read_percentage=0, time=30):

@@ -53,7 +53,7 @@ spdk_log(enum spdk_log_level level, const char *file, const int line, const char
 {
 }
 
-void* buffer_init(size_t bytes, uint64_t *phys_addr,
+void* buffer_init(NULL, size_t bytes, uint64_t *phys_addr,
                   uint32_t ptype, uint32_t pvalue)
 {
 

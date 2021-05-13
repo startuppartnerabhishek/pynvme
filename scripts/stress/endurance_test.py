@@ -87,8 +87,8 @@ def test_ioworker_jedec_enterprise_workload_4k(nvme0n1):
 
 def test_replay_jedec_client_trace(nvme0, nvme0n1, qpair):
     mdts = min(nvme0.mdts, 64*1024)  # upto 64K IO
-    buf = d.Buffer(mdts, "write", 100, 0xbeef)
-    trim_buf_list = [d.Buffer() for i in range(1024)]
+    buf = d.Buffer(nvme0, mdts, "write", 100, 0xbeef)
+    trim_buf_list = [d.Buffer(nvme0) for i in range(1024)]
     batch = 0
     counter = 0
 
