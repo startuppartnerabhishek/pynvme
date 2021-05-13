@@ -36,7 +36,7 @@ int sim_qpair_process_completions(qpair_t *q, unsigned int max);
 
 /* logging utility functions */
 void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry);
-void log_ctrlr_completion(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry);
+void log_ctrlr_completion(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry, bool print_cmd);
 void log_ctrlr_completion_buf_id_controller(sim_cmd_log_entry_t *cmd_log_entry);
 void log_ctrlr_completion_buf_id_namespace(sim_cmd_log_entry_t *cmd_log_entry);
 void sim_sleep(unsigned int seconds, unsigned int nanoseconds);
@@ -63,6 +63,8 @@ int prune_completion_table(qpair_t *qpair, unsigned int max_clean);
 int free_completion_table(qpair_t *qpair);
 
 void free_log_entry(sim_cmd_log_entry_t *e);
+
+void log_dump_single_command(sim_cmd_log_entry_t *cmd_log);
 
 /********************* </end> externs, types and declarations ***********************/
 

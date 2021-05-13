@@ -336,7 +336,7 @@ int sim_receive_and_note_completion(sim_cmd_log_entry_t *completion_ctx, cpl *cq
         );
     }
 
-    log_ctrlr_completion(completion_ctx->qpair, completion_ctx);
+    log_ctrlr_completion(completion_ctx->qpair, completion_ctx, true);
 
     return 0;
 }

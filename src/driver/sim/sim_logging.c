@@ -31,18 +31,65 @@ char *log_buf_dump(const char* header, const void* buf, size_t len, size_t base)
   return NULL;
 }
 
+void log_dump_single_command(sim_cmd_log_entry_t *cmd_log)
+{
+    DRVSIM_LOG("\n>>>> Log Entry %p, prev %p, next %p, is_completed %u, is_processed %u, "
+                    "resp_buf %p, resp_buf len %lu\n", cmd_log, cmd_log->prev, cmd_log->next,
+                    cmd_log->is_completed, cmd_log->is_processed, cmd_log->response_buf,
+                    cmd_log->response_buf_len);
+
+    log_ctrlr_cmd(cmd_log->qpair, cmd_log);
+
+    if (cmd_log->is_completed) {
+        log_ctrlr_completion(cmd_log->qpair, cmd_log, false);
+    }
+
+    DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, "\n");
+}
+
 void log_cmd_dump(qpair_t* qpair, size_t count)
 {
-  // TODO/TBD
-  DRVSIM_TBD("not implemented\n");
-  return;
+    sim_cmd_log_entry_t   *log_entry = qpair->log_list_head;
+    uint16_t              qid = qpair->id;
+    uint32_t              dump_count = count;
+    const uint32_t        max_entries = qpair->log_entry_count;
+    uint32_t             printed = 0;
+
+    // print cmdlog from tail to head
+    if (!log_entry) {
+        DRVSIM_ASSERT((max_entries == 0),
+                "entry count %u, but log_entry ptr is NULL\n", max_entries);
+        DRVSIM_LOG("No log entries for qpair %p\n", qpair);
+        return;
+    }
+
+    pthread_mutex_lock(&qpair->parent_controller->lock);
+
+    if (count == 0 || count > max_entries)
+    {
+        dump_count = max_entries;
+    }
+
+    // cmdlog is NOT SQ/CQ. cmdlog keeps CMD/CPL for script test debug purpose
+    DRVSIM_LOG("Dumping log entries: dump ctrlr %p, qpair %p, qid %d, count %d from tail\n",
+                    qpair->parent_controller, qpair, qid, dump_count);
+
+    // only send the most recent part of cmdlog
+    for (log_entry = log_entry->prev; printed < dump_count; printed++, log_entry = log_entry->prev) {
+        log_dump_single_command(log_entry);
+    }
+
+    pthread_mutex_unlock(&qpair->parent_controller->lock);
+
+    DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, "\n\n");
+
+    return;
 }
 
 void log_cmd_dump_admin(ctrlr_t* ctrlr, size_t count)
 {
-  // TODO/TBD
-  DRVSIM_TBD("not implemented\n");
-  return;
+    log_cmd_dump(ctrlr->adminq, count);
+    return;
 }
 
 void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry)
@@ -50,7 +97,7 @@ void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry)
     bool is_adminq = SIM_IS_ADMINQ(qp);
     const char *cmd_name_as_string = cmd_name(cmd_log_entry->cmd.opc, is_adminq ? 0 : 1);
 
-    DRVSIM_LOG("ctrlr %p is sending command on %s qp %p\n",
+    DRVSIM_LOG("ctrlr %p - Command on %s qp %p\n",
         qp->parent_controller, is_adminq ? "ADMIN" : "IO", qp);
 
     DRVSIM_LOG("Command opc %s (%u), fuse %u, cid 0x%x, nsid %u, cdw10 %u\n",
@@ -62,17 +109,19 @@ void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry)
     return;
 }
 
-void log_ctrlr_completion(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry)
+void log_ctrlr_completion(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry, bool print_cmd)
 {
     bool is_adminq = SIM_IS_ADMINQ(qp);
     const char *cmd_name_as_string = cmd_name(cmd_log_entry->cmd.opc, is_adminq ? 0 : 1);
 
-    DRVSIM_LOG("ctrlr %p got completion on %s qp %p\n",
+    DRVSIM_LOG("ctrlr %p Completion on %s qp %p\n",
         qp->parent_controller, is_adminq ? "ADMIN" : "IO", qp);
 
-    DRVSIM_LOG("|||| Command was opc %s (%u), fuse %u, cid 0x%x --------->\n",
-        cmd_name_as_string, cmd_log_entry->cmd.opc,
-        cmd_log_entry->cmd.fuse, cmd_log_entry->cmd.cid);
+    if (print_cmd) {
+        DRVSIM_LOG("|||| Command was opc %s (%u), fuse %u, cid 0x%x --------->\n",
+            cmd_name_as_string, cmd_log_entry->cmd.opc,
+            cmd_log_entry->cmd.fuse, cmd_log_entry->cmd.cid);
+    }
 
     DRVSIM_LOG("|||| Response status-code %u, phase-tag %u, code-type %u, more %u, dnr %u\n",
         cmd_log_entry->cpl.status.sc, cmd_log_entry->cpl.status.p, cmd_log_entry->cpl.status.sct,
