@@ -69,6 +69,10 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
     }
 
     if (cmd_log->response_buf && cmd_log->free_buf_on_completion) {
+        // the controller can  get freed up in buffer_fini, but that should not be allowed here
+        DRVSIM_ASSERT((cmd_log->qpair->parent_controller->is_destroyed == false),
+                "dangerous buffer free on a destroyed buffer, qpair %p, controller %p, destroyed %u\n",
+                cmd_log->qpair, cmd_log->qpair->parent_controller, cmd_log->qpair->parent_controller->is_destroyed);
         buffer_fini(cmd_log->qpair->parent_controller, cmd_log->response_buf);
     }
 

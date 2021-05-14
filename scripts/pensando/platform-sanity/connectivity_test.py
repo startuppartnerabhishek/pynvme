@@ -59,25 +59,30 @@ def test_nvme_identify_controller(pcie):
     def nvme_custom_basic_init(nvme0):
         logging.info("user defined custom nvme init")
 
+        # 1. wait for controller ready
         nvme0[0x14] = 0
         while not (nvme0[0x1c]&0x1) == 0: pass
 
-        # 3. set admin queue registers
+        # 2. set admin queue registers
         nvme0.init_adminq()
 
-        # 4. set register cc
+        # 3. set register cc
         nvme0[0x14] = 0x00460000
 
-        # 5. enable cc.en
+        # 4. enable cc.en
         nvme0[0x14] = 0x00460001
 
-        # 6. wait csts.rdy to 1
+        # 5. wait csts.rdy to 1
         while not (nvme0[0x1c]&0x1) == 1: pass
 
-        # 7. identify controller
+        logging.info("nvme_custom_basic_init: attempting Controller-Identify for controller nvme0")
+        logging.info(nvme0)
+        
+        # 6. identify controller
         nvme0.identify(driverIntfObj.Buffer(nvme0, 4096)).waitdone()
 
-        # 8. create and identify all namespace
+        # 7. create and identify all namespace
+        logging.info("nvme_custom_basic_init: Identify namespaces (automatically)")
         nvme0.init_ns()
 
     logging.info("STARTED TEST test_nvme_identify_controller with nvme0 =========================")
