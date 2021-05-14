@@ -632,6 +632,8 @@ int nvme_wait_completion_admin(ctrlr_t* ctrlr)
 
     DRVSIM_ASSERT((ctrlr && ctrlr->adminq), "ctrlr %p and adminq should be non-NULL\n", ctrlr);
 
+    // DRVSIM_LOG("Test requested waitdone on ctrlr %p, adminq %p\n", ctrlr, ctrlr->adminq);
+
     processed = sim_qpair_process_completions(ctrlr->adminq, DRVSIM_VERY_LARGE_NUMBER);
 
     if (processed) {

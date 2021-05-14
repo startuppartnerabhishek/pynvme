@@ -237,6 +237,7 @@ cdef class Buffer(object):
     cdef d.ctrlr_t * _ctrlr
 
     def __cinit__(self, Controller nvme, size=4096, name="buffer", pvalue=0, ptype=0):
+        # print("Inside Buffer contructor with size %u", size); sys.stdout.flush();
         assert size > 0, "0 is not valid size"
 
         # copy python string to c string
@@ -251,10 +252,18 @@ cdef class Buffer(object):
         self._size = size
         self.prp_size = size
         self.offset = 0
-        self._ctrlr = nvme.pcie._ctrlr
+        if nvme is None:
+            # print("Buffer-constructor got NULL nvme\n"); sys.stdout.flush()
+            self._ctrlr = NULL
+        else:
+            self._ctrlr = nvme.pcie._ctrlr
+
         self.ptr = d.buffer_init(self._ctrlr, size, &self.phys_addr, ptype, pvalue)
         if self.ptr is NULL:
             raise MemoryError()
+        
+        # print("Leaving Buffer contructor with size %u", size); sys.stdout.flush();
+
 
     def __dealloc__(self):
         if self.name is not NULL:
