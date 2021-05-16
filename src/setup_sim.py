@@ -9,7 +9,7 @@ agent_lib_path=None
 # find location of agent-libs
 with open("../conf/simconf.json") as f:
     json_conf = json.load(f)
-    agent_lib_path = '../' + json_conf['nsv_test_root_path'] + 'build/'
+    agent_lib_path = '../' + json_conf['global']['nsv_test_root_path'] + 'build/'
 
 print('setup_py.sim: Will look for agent-libs in ' + agent_lib_path)
 

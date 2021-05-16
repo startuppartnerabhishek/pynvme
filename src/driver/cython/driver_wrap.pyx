@@ -58,6 +58,7 @@ import datetime
 import statistics
 import subprocess
 import multiprocessing
+import json
 
 # c library
 import cython
@@ -2929,9 +2930,14 @@ if os.geteuid() == 0 or globalTestOptions["mode"] == "SIM":
     _reentry_flag_init()
 
     # init driver
-    if d.driver_init() != 0:
-        logging.error("driver initialization fail")
-        raise SystemExit("driver initialization fail")
+    if globalTestOptions["mode"] == "SIM":
+        if d.driver_init(json.dumps(globalTestOptions["config_json"]["global"]).encode('utf-8')) != 0:
+            logging.error("SIM: driver initialization fail")
+            raise SystemExit("SIM: driver initialization fail")
+    else:
+        if d.driver_init(NULL) != 0:
+            logging.error("SIM: driver initialization fail")
+            raise SystemExit("SIM: driver initialization fail")
 
     # module fini
     atexit.register(d.driver_fini)

@@ -10,7 +10,7 @@ LOGDIR=./logs
 LOGFILE_NAME_TIMESTAMP_FORMAT='+%Y:%m:%d-%R:%S'
 CONF_DIR=./conf
 CONF_FILE=${CONF_DIR}/simconf.json
-NSV_ROOT_DIR=$(jq -rj .nsv_test_root_path ${CONF_FILE})
+NSV_ROOT_DIR=$(jq -rj .global.nsv_test_root_path ${CONF_FILE})
 AGENT_LIB_PATH=${NSV_ROOT_DIR}/build
 
 if [ "$#" -ne 1 ] && [ "$#" -ne 2 ];

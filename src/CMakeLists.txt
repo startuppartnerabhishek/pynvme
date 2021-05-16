@@ -13,7 +13,7 @@ set(DRV_INCLUDE_DIR ${DRIVER_SRC_BASE}/include)
 set(SPDK_INCLUDE_DIR ../spdk/include)
 set(SIM_INCLUDE_DIR ${SIM_DIR}/cJSON)
 set(CONF_FILE ../../conf/simconf.json)
-set(AGENT_INCLUDE_DIR_CONF_KEY .nsv_test_root_path)
+set(AGENT_INCLUDE_DIR_CONF_KEY .global.nsv_test_root_path)
 
 execute_process(COMMAND jq -rj ${AGENT_INCLUDE_DIR_CONF_KEY} ${CONF_FILE} OUTPUT_VARIABLE NSV_ROOT)
 message(----NSV_ROOT----- = ${NSV_ROOT})
