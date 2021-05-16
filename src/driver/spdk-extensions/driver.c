@@ -1901,7 +1901,7 @@ static void driver_init_config(void)
 }
 
 
-int driver_init(void)
+int driver_init(char *conf_json)
 {
   char buf[64];
   struct spdk_env_opts opts;

@@ -80,11 +80,11 @@ def pytest_configure(config):
             sim_config = json.load(f)
 
         sim_config_as_string = json.dumps(sim_config)
-        assert sim_config_as_string != None, "SIM mode requires a json conf-file"
+        assert sim_config_as_string != None, "SIM mode requires a valid json conf-file"
 
     globalTestOptions = {
         "mode": deviceMode,
-        "conf": conf,
+        "config_file": conf,
         "driverModule": driverModule,
         "config_json": sim_config,
         "config_as_string": sim_config_as_string
@@ -123,15 +123,20 @@ def pciaddr(request):
 
 @pytest.fixture(scope="function")
 def pcie(pciaddr):
-    logging.info("fixture pcie(pcieaddr %s)" % pciaddr)
+    logging.info("fixture pcie(pcieaddr %s)" % pciaddr); sys.stdout.flush();
 
-    ret = d.Pcie(pciaddr, 0, globalTestOptions["mode"])
+    if globalTestOptions["mode"] == "PCIE":
+        logging.info("fixture pcie [PCIE] - creating Pcie object with addr %s" % pciaddr); sys.stdout.flush();
+        ret = d.Pcie(pciaddr, 0, "PCIE")
+    else:
+        logging.info("fixture pcie [SIM] - creating Pcie object to access nvme0 with config %s" % globalTestOptions["config_json"]["nvme0"]); sys.stdout.flush();
+        ret = d.Pcie(json.dumps(globalTestOptions["config_json"]["nvme0"]), 0, "SIM")
     yield ret
     ret.close()
 
-    
 @pytest.fixture(scope="function")
 def nvme0(pcie):
+    ret = None
     logging.info("fixture nvme0(pcie)"); sys.stdout.flush();
     logging.info(pcie); sys.stdout.flush();
     ret = d.Controller(pcie)

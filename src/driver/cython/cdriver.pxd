@@ -96,7 +96,7 @@ cdef extern from "driver.h":
     ctypedef void(*timeout_cb_func)(void * cb_arg, ctrlr_t * ctrlr,
                                     qpair_t * qpair, unsigned short cid)
 
-    int driver_init()
+    int driver_init(char *conf_json)
     int driver_fini()
     unsigned long driver_config(unsigned long cfg_word)
     unsigned long driver_config_read()

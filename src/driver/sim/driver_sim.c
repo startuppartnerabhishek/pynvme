@@ -1129,8 +1129,10 @@ void driver_init_num_queues(ctrlr_t* ctrlr, uint32_t cdw0)
     return;
 }
 
-int driver_init(void)
+int driver_init(char *conf_json)
 {
+    DRVSIM_LOG("Got config %s\n", conf_json);
+
     driver_init_common();
 
     return DRVSIM_RETCODE_SUCCESS;

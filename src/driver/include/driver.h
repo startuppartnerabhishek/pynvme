@@ -273,7 +273,7 @@ extern int ioworker_entry(namespace_t* ns,
                           ioworker_rets* rets);
 
 extern int driver_init_common(void);
-extern int driver_init(void);
+extern int driver_init(char *conf_json);
 extern int driver_fini(void);
 extern uint64_t driver_config(uint64_t cfg_word);
 extern uint64_t driver_config_read(void);
