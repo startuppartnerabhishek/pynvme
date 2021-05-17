@@ -150,7 +150,7 @@ typedef struct sim_nvme_qpair_s {
     unsigned int commands_sent;
     unsigned int aers_sent;
     unsigned int responses_received;
-    unsigned int aers_completions_received;
+    unsigned int aer_completions_received;
     unsigned int completions_collected;
     pthread_mutex_t lock;
 } qpair_t;

@@ -105,7 +105,7 @@ static void wait_for_all_adminq_completions(ctrlr_t *ctrlr)
     do {
         pthread_mutex_lock(&ctrlr->lock);
 
-        if ((adminq->commands_sent - adminq->aers_sent) > (adminq->responses_received - adminq->aers_completions_received)) {
+        if ((adminq->commands_sent - adminq->aers_sent) > (adminq->responses_received - adminq->aer_completions_received)) {
             pthread_mutex_unlock(&ctrlr->lock);
             sim_sleep(0, 10000);
             continue;   
@@ -258,6 +258,10 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
 
     /* connect to qpair - just behind the tail */
     qpair->commands_sent++;
+
+    if (e->cmd.opc == SPDK_NVME_OPC_ASYNC_EVENT_REQUEST) {
+        qpair->aers_sent++;
+    }
 
     if (qpair->log_list_head) {
         sim_cmd_log_entry_t *prev = qpair->log_list_head->prev; /* => tail */
@@ -984,7 +988,7 @@ int nvme_fini(ctrlr_t* ctrlr)
 
 #if 0
     DRVSIM_ASSERT((ctrlr->num_alloocated_buffers == ctrlr->num_freed_buffers),
-        "ctrlr %p has oustanding allocated buffers, alloc %u, free %u\n",
+        "ctrlr %p has outstanding allocated buffers, alloc %u, free %u\n",
         ctrlr, ctrlr->num_alloocated_buffers, ctrlr->num_freed_buffers);
 #endif
 
@@ -992,7 +996,7 @@ int nvme_fini(ctrlr_t* ctrlr)
 
     if (ctrlr->num_allocated_buffers != ctrlr->num_freed_buffers) {
         DRVSIM_LOG_TO_FILE(stderr,
-            "WARNING: ctrlr %p has oustanding allocated buffers, alloc %u, free %u\n",
+            "WARNING: ctrlr %p has outstanding allocated buffers, alloc %u, free %u\n",
             ctrlr, ctrlr->num_allocated_buffers, ctrlr->num_freed_buffers);
         
         ctrlr->is_destroyed = true;
