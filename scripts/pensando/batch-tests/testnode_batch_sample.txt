@@ -4,3 +4,4 @@ scripts/pensando/platform-sanity/connectivity_test.py::test_driver_common_reacha
 scripts/pensando/platform-sanity/connectivity_test.py::test_nvme_identify_controller
 driver_test.py::test_get_identify
 driver_test.py::test_command_supported_and_effect
+driver_test.py::test_admin_generic_cmd
