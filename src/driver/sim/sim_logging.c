@@ -100,7 +100,7 @@ void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry)
     DRVSIM_LOG("ctrlr %p - Command on %s qp %p\n",
         qp->parent_controller, is_adminq ? "ADMIN" : "IO", qp);
 
-    DRVSIM_LOG("Command opc %s (%u), fuse %u, cid 0x%x, nsid %u, cdw10 %u\n",
+    DRVSIM_LOG("Command opc %s (%u), fuse %u, cid 0x%x, nsid 0x%x, cdw10 0x%x\n",
         cmd_name_as_string, cmd_log_entry->cmd.opc,
         cmd_log_entry->cmd.fuse, cmd_log_entry->cmd.cid, cmd_log_entry->cmd.nsid, cmd_log_entry->cmd.cdw10);
 
@@ -191,4 +191,41 @@ void log_ctrlr_completion_buf_id_namespace(sim_cmd_log_entry_t *cmd_log_entry)
     LOG_TYPE_BANNER("Identify Namespace Response", "END");
 
     return;
+}
+
+void log_ctrlr_completion_get_log_page(sim_cmd_log_entry_t *cmd_log_entry)
+{
+    char *lid;
+
+    LOG_TYPE_BANNER("GET LOG PAGE Response", "START");
+
+    switch(cmd_log_entry->cmd.cdw10 & 0xff) {
+        case 0x01:
+            lid = "Error Information";
+            break;
+
+        case 0x2:
+            lid = "SMART/Health Information";
+            break;
+
+        case 0x3:
+            lid = "Firmware Slot Information";
+            break;
+
+        case 0x4:
+            lid = "Changed Namespace list";
+            break;
+
+        case 0x5:
+            lid = "Command Effects Log";
+            break;
+
+        default:
+            lid = "Unknown/Unhandled LID";
+            break;
+    }
+
+    DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, "LID %s\n", lid);
+
+    LOG_TYPE_BANNER("GET LOG PAGE Response", "END");
 }

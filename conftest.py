@@ -138,7 +138,6 @@ def pcie(pciaddr):
 def nvme0(pcie):
     ret = None
     logging.info("fixture nvme0(pcie)"); sys.stdout.flush();
-    logging.info(pcie); sys.stdout.flush();
     ret = d.Controller(pcie)
     logging.info("fixture nvme0 - got controller object"); sys.stdout.flush();
     logging.info(ret); sys.stdout.flush();

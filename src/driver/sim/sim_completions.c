@@ -5,6 +5,8 @@
 static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log);
 static void sim_process_completion_identify_controller(struct sim_cmd_log_entry_s *cmd_log);
 static void sim_process_completion_identify_namespace(struct sim_cmd_log_entry_s *cmd_log);
+static void sim_process_completion_aer(struct sim_cmd_log_entry_s *cmd_log);
+static void sim_process_completion_get_log_page(struct sim_cmd_log_entry_s *cmd_log);
 
 static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
 {
@@ -53,6 +55,14 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
 
             case SPDK_NVME_OPC_SET_FEATURES:
                 DRVSIM_NOT_IMPLEMENTED_BENIGN("SET Features completion - processing not implemented\n");
+                break;
+
+            case SPDK_NVME_OPC_GET_LOG_PAGE:
+                sim_process_completion_get_log_page(cmd_log);
+                break;
+
+            case SPDK_NVME_OPC_ASYNC_EVENT_REQUEST:
+                sim_process_completion_aer(cmd_log);
                 break;
 
             default:
@@ -107,6 +117,7 @@ int sim_qpair_process_completions(qpair_t *q, unsigned int max)
     if (processed) {
         DRVSIM_LOG("QP %p counters: cmds sent %u, responses received %u, log entry count %u, completions collected %u\n",
             q, q->commands_sent, q->responses_received, q->log_entry_count, q->completions_collected);
+        DRVSIM_LOG("AERs sent %u, AERs completed %u\n", q->aers_sent, q->aer_completions_received);
     }
 
     pthread_mutex_unlock(&q->parent_controller->lock);
@@ -189,4 +200,46 @@ static void sim_process_completion_identify_namespace(struct sim_cmd_log_entry_s
                     n, ns_id, n->sector_size);
 
     return;
+}
+
+static void sim_process_completion_aer(struct sim_cmd_log_entry_s *cmd_log)
+{
+    DRVSIM_LOG("Processing AER on qp %p\n", cmd_log->qpair);
+
+    cmd_log->qpair->aer_completions_received++;
+
+    DRVSIM_LOG("AERs sent %u, completions received %u\n",
+        cmd_log->qpair->aers_sent, cmd_log->qpair->aer_completions_received);
+
+    DRVSIM_ASSERT( /* hopefully not enough AERs to wrap u32 */
+        (cmd_log->qpair->aer_completions_received <= cmd_log->qpair->aers_sent),
+        "qp %p, ctrlr %p, more aer completions %u than requests %u\n",
+        cmd_log->qpair,  cmd_log->qpair->parent_controller,
+        cmd_log->qpair->aer_completions_received,
+        cmd_log->qpair->aers_sent);
+
+    return;
+}
+
+static void sim_process_completion_get_log_page(struct sim_cmd_log_entry_s *cmd_log)
+{
+    DRVSIM_LOG("Processing completion with cmd_id 0x%x, status code %u\n",
+                    cmd_log->cpl.cid, cmd_log->cpl.status.sc);
+ 
+    if (spdk_nvme_cpl_is_error(&cmd_log->cpl)) {
+
+        DRVSIM_LOG("sc %u, sct %u => error (should be SUCCESS, GENERIC SUCCESS), no further processing\n",
+            cmd_log->cpl.status.sc, cmd_log->cpl.status.sct);
+
+        return;
+    } else if (cmd_log->response_buf_len < 0xffff) {
+        DRVSIM_LOG("buffer of len %lu too small to parse as id-ns response (min %lu)\n",
+            cmd_log->response_buf_len, sizeof(struct spdk_nvme_ns_data));
+
+        return;
+    }
+
+    log_ctrlr_completion_get_log_page(cmd_log);
+
+    return;   
 }
