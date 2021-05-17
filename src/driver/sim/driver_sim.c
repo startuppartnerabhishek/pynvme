@@ -20,26 +20,14 @@ typedef struct sim_config_item_s {
     void *save_to;
 } sim_config_item_t;
 
-#define CONF_FILE_PARSE_ENTRY(__field__, __is_string__) {#__field__, __is_string__, &g_sim_config.__field__}
+#define CONF_FILE_PARSE_ENTRY(__conf_tgt_struct__, __field__, __is_string__) {#__field__, __is_string__, &__conf_tgt_struct__->__field__}
 
 /*** global config *****/
 sim_config_t g_sim_config;
 
-static sim_config_item_t g_simcfg_file_items[] = {
-    CONF_FILE_PARSE_ENTRY(agent_runtime_rootpath, true),
-    CONF_FILE_PARSE_ENTRY(dev_no, false),
-    CONF_FILE_PARSE_ENTRY(vf_no, false),
-    CONF_FILE_PARSE_ENTRY(sq_size, false),
-    CONF_FILE_PARSE_ENTRY(cq_size, false),
-    CONF_FILE_PARSE_ENTRY(nr_cmds, false),
-    CONF_FILE_PARSE_ENTRY(log_register_reads, false),
-    CONF_FILE_PARSE_ENTRY(log_register_writes, false),
-    CONF_FILE_PARSE_ENTRY(log_buf_alloc_free, false),
-    CONF_FILE_PARSE_ENTRY(max_log_entries_per_qpair, false),
-    CONF_FILE_PARSE_ENTRY(log_dump_adminq_completion_len, false)
-};
-
 static void init_sim_config(char *json_string);
+static void init_sim_controller_config(char *json_string, ctrlr_t *ctrlr);
+static void __init_config_from_conf_file(const char *json_string, const sim_config_item_t *cfg_items, unsigned int num_items);
 static void drvsim_completion_callback(void *cb_args, nvme_ctrlr_completion_t *cmpl);
 static qpair_t *sim_allocate_qpair(ctrlr_t *ctrlr, bool is_adminq);
 static void sim_free_qpair(qpair_t *q);
@@ -882,43 +870,59 @@ int nvme_set_reg64(ctrlr_t* ctrlr,
 
 }
 
-static void init_sim_config(char *json_string)
+static void __init_config_from_conf_file(const char *json_string, const sim_config_item_t *cfg_items, unsigned int num_items)
 {
     cJSON *conf = cJSON_Parse(json_string);
     cJSON *aConfig;
     unsigned int i;
-    const unsigned int max = sizeof(g_simcfg_file_items) / sizeof(g_simcfg_file_items[0]);
 
     if (NULL == conf) {
         DRVSIM_FATAL_ERROR("Invalid json-config %s\n", json_string);
         return;
     }
 
-    for (i = 0; i < max; i++) {
-        aConfig = cJSON_GetObjectItemCaseSensitive(conf, g_simcfg_file_items[i].key_name);
+    for (i = 0; i < num_items; i++) {
+        aConfig = cJSON_GetObjectItemCaseSensitive(conf, cfg_items[i].key_name);
 
         if (aConfig) {
-            if (g_simcfg_file_items[i].isString) {
+            if (cfg_items[i].isString) {
                 if (cJSON_IsString(aConfig) && NULL != aConfig->valuestring) {
-                    strcpy((char *)g_simcfg_file_items[i].save_to, aConfig->valuestring);
-                    DRVSIM_LOG("[JSON-CFG] %s (STRING) -> %s\n", g_simcfg_file_items[i].key_name,
-                        (char *)g_simcfg_file_items[i].save_to);
+                    strcpy((char *)cfg_items[i].save_to, aConfig->valuestring);
+                    DRVSIM_LOG("[JSON-CFG] %s (STRING) -> %s\n", cfg_items[i].key_name,
+                        (char *)cfg_items[i].save_to);
                     continue;
                 }
             } else {
                 if (cJSON_IsNumber(aConfig)) {
-                    *(int *)g_simcfg_file_items[i].save_to = aConfig->valueint;
-                    DRVSIM_LOG("[JSON-CFG] %s (INT) -> %d\n", g_simcfg_file_items[i].key_name,
-                        *(int *)g_simcfg_file_items[i].save_to);
+                    *(int *)cfg_items[i].save_to = aConfig->valueint;
+                    DRVSIM_LOG("[JSON-CFG] %s (INT) -> %d\n", cfg_items[i].key_name,
+                        *(int *)cfg_items[i].save_to);
                     continue;
                 }
             }
         }
 
-        DRVSIM_LOG("[JSON-CFG] %s NOT FOUND\n", g_simcfg_file_items[i].key_name);
+        DRVSIM_LOG("[JSON-CFG] %s NOT FOUND\n", cfg_items[i].key_name);
     }
 
     cJSON_Delete(conf);
+}
+
+static void init_sim_controller_config(char *json_string, ctrlr_t *ctrlr)
+{
+    const sim_config_item_t sim_ctrlr_cfg_file_items[] = {
+        CONF_FILE_PARSE_ENTRY(ctrlr, dev_no, false),
+        CONF_FILE_PARSE_ENTRY(ctrlr, vf_no, false),
+        CONF_FILE_PARSE_ENTRY(ctrlr, sq_size, false),
+        CONF_FILE_PARSE_ENTRY(ctrlr, cq_size, false),
+        CONF_FILE_PARSE_ENTRY(ctrlr, nr_cmds, false)
+    };
+
+    const unsigned int num_items = sizeof(sim_ctrlr_cfg_file_items) / sizeof(sim_config_item_t);
+
+    __init_config_from_conf_file(json_string, &sim_ctrlr_cfg_file_items[0], num_items);
+
+    return;
 }
 
 ctrlr_t* nvme_init(char * traddr, unsigned int port)
@@ -927,22 +931,22 @@ ctrlr_t* nvme_init(char * traddr, unsigned int port)
 
     DRVSIM_LOG("[ENTERING] traddr %s, port %u\n", traddr, port);
 
-    init_sim_config(traddr);
-
     ctrlr_opaque_handle = (ctrlr_t *)malloc(sizeof(ctrlr_t));
 
     DRVSIM_ASSERT((ctrlr_opaque_handle), "opaque handle alloc failed\n");
 
     memset(ctrlr_opaque_handle, 0, sizeof(ctrlr_t));
 
+    init_sim_controller_config(traddr, ctrlr_opaque_handle);
+
     ctrlr_opaque_handle->ctrlr_api_handle =
         create_driver(
             (const char *)&g_sim_config.agent_runtime_rootpath,
-            g_sim_config.dev_no,
-            g_sim_config.vf_no,
-            g_sim_config.sq_size,
-            g_sim_config.cq_size,
-            g_sim_config.nr_cmds);
+            ctrlr_opaque_handle->dev_no,
+            ctrlr_opaque_handle->vf_no,
+            ctrlr_opaque_handle->sq_size,
+            ctrlr_opaque_handle->cq_size,
+            ctrlr_opaque_handle->nr_cmds);
 
     if (!ctrlr_opaque_handle->ctrlr_api_handle) {
         free(ctrlr_opaque_handle);
@@ -1129,9 +1133,29 @@ void driver_init_num_queues(ctrlr_t* ctrlr, uint32_t cdw0)
     return;
 }
 
+static void init_sim_config(char *json_string)
+{
+    const sim_config_item_t sim_global_cfg_file_items[] = {
+        CONF_FILE_PARSE_ENTRY((&g_sim_config), agent_runtime_rootpath, true),
+        CONF_FILE_PARSE_ENTRY((&g_sim_config), log_register_reads, false),
+        CONF_FILE_PARSE_ENTRY((&g_sim_config), log_register_writes, false),
+        CONF_FILE_PARSE_ENTRY((&g_sim_config), log_buf_alloc_free, false),
+        CONF_FILE_PARSE_ENTRY((&g_sim_config), max_log_entries_per_qpair, false),
+        CONF_FILE_PARSE_ENTRY((&g_sim_config), log_dump_adminq_completion_len, false)
+    };
+
+    const unsigned int num_items = sizeof(sim_global_cfg_file_items) / sizeof(sim_config_item_t);
+
+    __init_config_from_conf_file(json_string, &sim_global_cfg_file_items[0], num_items);
+
+    return;
+}
+
 int driver_init(char *conf_json)
 {
     DRVSIM_LOG("Got config %s\n", conf_json);
+
+    init_sim_config(conf_json);
 
     driver_init_common();
 

@@ -2,11 +2,6 @@
     "global": {
         "agent_runtime_rootpath": "../../../sim/fork-1/nsv_test/run/",
         "nsv_test_root_path": "../../../sim/fork-1/nsv_test/",
-        "dev_no": 0,
-        "vf_no": 0,
-        "sq_size": 64,
-        "cq_size": 128,
-        "nr_cmds": 16,
         "log_register_reads": 0,
         "log_register_writes": 0,
         "log_buf_alloc_free": 1,
@@ -15,17 +10,10 @@
     },
 
     "nvme0": {
-        "agent_runtime_rootpath": "../../../sim/fork-1/nsv_test/run/",
-        "nsv_test_root_path": "../../../sim/fork-1/nsv_test/",
         "dev_no": 0,
         "vf_no": 0,
         "sq_size": 64,
         "cq_size": 128,
-        "nr_cmds": 16,
-        "log_register_reads": 0,
-        "log_register_writes": 0,
-        "log_buf_alloc_free": 1,
-        "max_log_entries_per_qpair": 128,
-        "log_dump_adminq_completion_len": 256
+        "nr_cmds": 16
     }
 }

@@ -166,6 +166,11 @@ typedef struct sim_nvme_ctrlr_s {
     unsigned int                    num_allocated_buffers;
     unsigned int                    num_freed_buffers;
     bool                            is_destroyed;
+    unsigned int                    dev_no;
+    unsigned int                    vf_no;
+    unsigned int                    sq_size;
+    unsigned int                    cq_size;
+    unsigned int                    nr_cmds;
 } ctrlr_t;
 
 typedef ctrlr_t pcie_t; // in SIM MODE, a controller also provides PCIE access
