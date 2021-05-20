@@ -15,5 +15,64 @@
         "sq_size": 64,
         "cq_size": 128,
         "nr_cmds": 16
+    },
+
+    "batch_config": {
+        "configs": [
+            {
+                "name": "batch config 0 (dummy)",
+
+                "setup" : {
+                    "command": "echo",
+                    "args": ["world", "-h something"]
+                },
+
+                "cleanup": {
+                    "command": "date",
+                    "args": []
+                },
+
+                "test_config": "batch0_cfg.json"
+            },
+
+            {
+                "name": "batch config 1 (vanilla nsv_test_cfg)",
+
+                "setup" : {
+                    "command": "ls",
+                    "args": ["-l", "-t", "-r"]
+                },
+
+                "cleanup": {
+                    "command": "du",
+                    "args": ["-H"]
+                },
+
+                "test_config": "batch0_cfg.json"
+            },
+
+            {
+                "name": "batch config 2 (kill and restart)",
+
+                "setup" : {
+                    "command": "kill_and_restart_agent.sh",
+                    "args": []
+                },
+
+                "cleanup": {
+                    "command": "delete_all_config.sh",
+                    "args": []
+                },
+
+                "test_config": "batch2_cfg.json"
+            }
+        ],
+
+        "default_config": 2,
+
+        "batches": {
+            "batch0": 0,
+            "batch1": 1
+        }
     }
 }

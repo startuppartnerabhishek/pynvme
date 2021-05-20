@@ -42,11 +42,18 @@ import importlib
 import json
 import sys
 
+additional_py_modules_path = "scripts/pensando/py-utils"
+
+sys.path.append(additional_py_modules_path)
+
+import batch as B
+
 # defer this binding
 # import nvme as d
 d=None
 globalTestOptions = None
 globalNvmeModule = None
+globalBatchCtrl = None
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -63,6 +70,7 @@ def pytest_configure(config):
     global globalTestOptions
     global d
     global globalNvmeModule
+    global globalBatchCtrl
     sim_config = None
     sim_config_as_string = None
 
@@ -89,6 +97,10 @@ def pytest_configure(config):
         "config_json": sim_config,
         "config_as_string": sim_config_as_string
     }
+
+    globalBatchCtrl = B.BatchControl(sim_config)
+
+    globalBatchCtrl.print()
 
     logging.info("pytest_configure: loading nvme module %s" % globalTestOptions["driverModule"])
     d = importlib.import_module(globalTestOptions["driverModule"])
@@ -199,3 +211,16 @@ def pytest_runtest_makereport(item, call):
     # be "setup", "call", "teardown"
     setattr(item, "rep_" + rep.when, rep)
 
+@pytest.fixture(scope="function")
+def currBatchInfo():
+    ret = globalBatchCtrl.getCurrentBatch(False)
+    yield ret
+
+@pytest.fixture(scope="function")
+def prevBatchInfo():
+    if (globalBatchCtrl.getCurrentBatchNumber() == 0):
+        ret = None
+    else:
+        ret = globalBatchCtrl.getCurrentBatch(True)
+
+    yield ret

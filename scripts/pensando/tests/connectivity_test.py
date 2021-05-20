@@ -1,5 +1,6 @@
 import logging
 import pytest
+import subprocess
 
 from conftest import globalNvmeModule as driverIntfObj
 
@@ -63,7 +64,7 @@ def test_nvme_identify_controller(pcie):
         nvme0[0x14] = 0
         while not (nvme0[0x1c]&0x1) == 0: pass
 
-        # 2. set admin queue registers
+    # 2. set admin queue registers
         nvme0.init_adminq()
 
         # 3. set register cc
@@ -91,3 +92,41 @@ def test_nvme_identify_controller(pcie):
     nvme0 = driverIntfObj.Controller(pcie, nvme_init_func=nvme_custom_basic_init)
 
     logging.info("test_nvme_identify_controller: test completed SUCCESSFULLY =======================")
+
+def test_batch_fence(prevBatchInfo, currBatchInfo):
+
+    logging.info("Batch marker (not a real test)")
+
+    if (prevBatchInfo):
+        logging.info(prevBatchInfo)
+        if (prevBatchInfo["cleanup"]):
+            logging.info("Cleaning up previous batch")
+            logging.info("Will invoke %s with args %s", prevBatchInfo['cleanup']['command'], prevBatchInfo['cleanup']['args'])
+            full_args = [prevBatchInfo['cleanup']['command']]
+            full_args.extend(prevBatchInfo['cleanup']['args'])
+            logging.info("Prepared full_args")
+            logging.info(full_args)
+            exit_status = subprocess.run(full_args)
+            logging.info("Exit status")
+            logging.info(exit_status)
+            assert exit_status.returncode == 0, "Non zero return code from cleanup"
+        else:
+            logging.info("No cleanup command")
+    else:
+        logging.info("No previous cleanup")
+
+    assert currBatchInfo, "currBatchInfo cannot be NULL"
+    assert currBatchInfo["setup"], "No setup info for current batch"
+
+    logging.info(currBatchInfo)
+
+    logging.info("Setting up batch %s", currBatchInfo['name'])
+    logging.info("Will invoke %s with args %s", currBatchInfo['setup']['command'], currBatchInfo['setup']['args'])
+    full_args = [currBatchInfo['setup']['command']]
+    full_args.extend(currBatchInfo['setup']['args'])
+    logging.info("Prepared full_args")
+    logging.info(full_args)
+    exit_status = subprocess.run(full_args)
+    logging.info("Exit status")
+    logging.info(exit_status)
+    assert exit_status.returncode == 0, "Non zero return code from setup"
