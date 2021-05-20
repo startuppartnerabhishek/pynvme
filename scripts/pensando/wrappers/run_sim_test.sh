@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# example scripts/pensando/wrappers/run_sim_test.sh scripts/pensando/platform-sanity/connectivity_test.py::test_driver_common_reachability
+# example scripts/pensando/wrappers/run_sim_test.sh scripts/pensando/tests/connectivity_test.py::test_driver_common_reachability
 
 RED='\033[0;31m'
 LIGHT_GREEN='\033[0;32m'
@@ -21,7 +21,7 @@ then
     echo $0 \"script_file::script_function\" [JSON_CONF_FILE] >&2
     echo >&2
     echo -e "${YELLOW}EXAMPLE (try it from the pynvme base directory):${NC}" >&2
-    echo -e "${LIGHT_GREEN}$0 scripts/pensando/platform-sanity/connectivity_test.py::test_py_invocation${NC}" >&2
+    echo -e "${LIGHT_GREEN}$0 scripts/pensando/tests/connectivity_test.py::test_py_invocation${NC}" >&2
     echo >&2
     exit -1
 fi
