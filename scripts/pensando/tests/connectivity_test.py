@@ -1,8 +1,14 @@
 import logging
 import pytest
 import subprocess
+import sys
+
+additional_py_modules_path = "scripts/pensando/py-utils"
+
+sys.path.append(additional_py_modules_path)
 
 from conftest import globalNvmeModule as driverIntfObj
+import cParser as P
 
 @pytest.mark.sim_test_trial_batch
 def test_py_invocation():
@@ -79,8 +85,19 @@ def test_nvme_identify_controller(pcie):
         logging.info("nvme_custom_basic_init: attempting Controller-Identify for controller nvme0")
         logging.info(nvme0)
         
+        id_ctrlr_resp_buf = driverIntfObj.Buffer(nvme0, 4096)
+
         # 6. identify controller
-        nvme0.identify(driverIntfObj.Buffer(nvme0, 4096)).waitdone()
+        nvme0.identify(id_ctrlr_resp_buf).waitdone()
+
+        logging.info("Parsing %u bytes of response buffer", P.struct_size("spdk_nvme_ctrlr_data"))
+        parsed_response_id_ctrlr = P.struct_parse(id_ctrlr_resp_buf[0:P.struct_size("spdk_nvme_ctrlr_data")], "spdk_nvme_ctrlr_data")
+
+        logging.info("ID Ctrlr Response buf - num-namespaces %u, sqes min-max (%u, %u), cqes min-max(%u, %u)",
+            parsed_response_id_ctrlr.nn, parsed_response_id_ctrlr.sqes.min, parsed_response_id_ctrlr.sqes.max, parsed_response_id_ctrlr.cqes.min, parsed_response_id_ctrlr.cqes.max)
+
+        logging.info("Serial Number")
+        logging.info(parsed_response_id_ctrlr.sn)
 
         # 7. create and identify all namespace
         logging.info("nvme_custom_basic_init: Identify namespaces (automatically)")
