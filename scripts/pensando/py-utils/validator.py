@@ -37,7 +37,9 @@ class Field:
 class FieldString(Field):
     def compare(self, rootObj, compareWith):
         specValue = self.getSpecField(compareWith)
-        cfgValue = CfgStore.getConfigDeep([rootObj, self.structNodeInCfg])
+
+        # convert the config value (string) to an array of ascii codes, before comarison
+        cfgValue = list( map( ord, (CfgStore.getConfigDeep([rootObj, self.structNodeInCfg]))))
 
         if None == cfgValue:
             # value not found in store, don't fail the test
@@ -47,8 +49,9 @@ class FieldString(Field):
 
         if shortenedCompvalue != cfgValue:
             logging.error("Object %s, field %s, path %s, spec-field %s type STR", rootObj, self.name, self.structNodeInCfg, self.structNodeInSpec)
-            logging.error("Expected")
+            logging.error("Expected (and expected as byte-array)")
             logging.error(CfgStore.getConfigDeep([rootObj, self.structNodeInCfg]))
+            logging.error(cfgValue)
             logging.error("Got")
             logging.error(compareWith[self.structNodeInSpec])
             assert False
@@ -84,7 +87,8 @@ class StructValidator:
 
 # instantiate controllers
 gControllerValidator = StructValidator([
-    FieldInt("Vendor Id", "vid", "vid")
+    FieldInt("Vendor Id", "vid", "vid"),
+    FieldString("Serial Number", "serial", "sn")
 ], "spdk_nvme_ctrlr_data")
 
 # external API
