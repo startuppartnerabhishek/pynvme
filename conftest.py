@@ -47,6 +47,7 @@ additional_py_modules_path = "scripts/pensando/py-utils"
 sys.path.append(additional_py_modules_path)
 
 import batch as B
+import configStore as CfgStore
 
 # defer this binding
 # import nvme as d
@@ -65,6 +66,9 @@ def pytest_addoption(parser):
     parser.addoption(
         "--conf", action="store", default="conf/simconf.json", help="environment configuration"
     )
+    parser.addoption(
+        "--agentconf", action="store", default="conf/agentconf.json", help="environment configuration"
+    )
 
 def pytest_configure(config):
     global globalTestOptions
@@ -76,6 +80,7 @@ def pytest_configure(config):
 
     deviceMode = config.getoption("--deviceMode")
     conf = config.getoption("--conf")
+    agentconf = config.getoption("--agentconf")
     driverModule = "nvme_sim"
     
     if deviceMode == "PCIE":
@@ -95,10 +100,13 @@ def pytest_configure(config):
         "config_file": conf,
         "driverModule": driverModule,
         "config_json": sim_config,
-        "config_as_string": sim_config_as_string
+        "config_as_string": sim_config_as_string,
+        "initial_agent_conf_file": agentconf
     }
 
     globalBatchCtrl = B.BatchControl(sim_config)
+
+    CfgStore.refreshConfig(agentconf)
 
     globalBatchCtrl.print()
 

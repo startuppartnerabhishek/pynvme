@@ -34,6 +34,10 @@ def struct_parse(buffer, typeName):
     instance = gParserDefinitions[typeName].instance(buffer)
     return instance
 
+def struct_parse_as_dict(buffer, typeName):
+    dict = gParserDefinitions[typeName].deserialize(buffer)
+    return dict
+
 def struct_list():
     results = []
 

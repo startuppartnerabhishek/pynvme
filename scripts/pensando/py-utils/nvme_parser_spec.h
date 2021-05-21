@@ -942,60 +942,6 @@ struct spdk_nvme_error_information_entry {
 	uint8_t			reserved42[22];
 };
 
-// #if 0
-
-union spdk_nvme_critical_warning_state {
-	uint8_t		raw;
-
-	struct {
-		uint8_t	available_spare		: 1;
-		uint8_t	temperature		: 1;
-		uint8_t	device_reliability	: 1;
-		uint8_t	read_only		: 1;
-		uint8_t	volatile_memory_backup	: 1;
-		uint8_t	reserved		: 3;
-	} bits;
-};
-
-/**
- * SMART / health information page (\ref SPDK_NVME_LOG_HEALTH_INFORMATION)
- */
-struct __attribute__((packed)) __attribute__((aligned)) spdk_nvme_health_information_page {
-	union spdk_nvme_critical_warning_state	critical_warning;
-
-	uint16_t		temperature;
-	uint8_t			available_spare;
-	uint8_t			available_spare_threshold;
-	uint8_t			percentage_used;
-
-	uint8_t			reserved[26];
-
-	/*
-	 * Note that the following are 128-bit values, but are
-	 *  defined as an array of 2 64-bit values.
-	 */
-	/* Data Units Read is always in 512-byte units. */
-	uint64_t		data_units_read[2];
-	/* Data Units Written is always in 512-byte units. */
-	uint64_t		data_units_written[2];
-	/* For NVM command set, this includes Compare commands. */
-	uint64_t		host_read_commands[2];
-	uint64_t		host_write_commands[2];
-	/* Controller Busy Time is reported in minutes. */
-	uint64_t		controller_busy_time[2];
-	uint64_t		power_cycles[2];
-	uint64_t		power_on_hours[2];
-	uint64_t		unsafe_shutdowns[2];
-	uint64_t		media_errors[2];
-	uint64_t		num_error_info_log_entries[2];
-	/* Controller temperature related. */
-	uint32_t		warning_temp_time;
-	uint32_t		critical_temp_time;
-	uint16_t		temp_sensor[8];
-
-	uint8_t			reserved2[296];
-};
-
 /* Commands Supported and Effects Data Structure */
 struct spdk_nvme_cmds_and_effect_entry {
 	/** Command Supported */
@@ -1061,7 +1007,7 @@ struct spdk_nvme_telemetry_log_page_hdr {
 	uint8_t    ctrlr_gen;
 	/* Reason identifier */
 	uint8_t    rsnident[128];
-	uint8_t    telemetry_datablock[0];
+	uint8_t    telemetry_datablock[512];
 };
 
 
@@ -1266,20 +1212,6 @@ union spdk_nvme_feat_write_atomicity {
 		uint32_t dn : 1;
 
 		uint32_t reserved : 31;
-	} bits;
-};
-
-/**
- * Data used by Set Features / Get Features \ref SPDK_NVME_FEAT_ASYNC_EVENT_CONFIGURATION
- */
-union spdk_nvme_feat_async_event_configuration {
-	uint32_t raw;
-	struct {
-		union spdk_nvme_critical_warning_state crit_warn;
-		uint32_t ns_attr_notice		: 1;
-		uint32_t fw_activation_notice	: 1;
-		uint32_t telemetry_log_notice	: 1;
-		uint32_t reserved		: 21;
 	} bits;
 };
 
