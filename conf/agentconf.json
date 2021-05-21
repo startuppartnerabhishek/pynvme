@@ -1,5 +1,6 @@
 {
     "nvme0": {
-        "vid": "5394"
+        "vid": "5394",
+        "serial": "PDSNVME-01          "
     }
 }
