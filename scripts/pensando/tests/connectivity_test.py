@@ -9,6 +9,8 @@ sys.path.append(additional_py_modules_path)
 
 from conftest import globalNvmeModule as driverIntfObj
 import cParser as P
+import configStore as CfgStore
+import validator as Validator
 
 @pytest.mark.sim_test_trial_batch
 def test_py_invocation():
@@ -99,6 +101,9 @@ def test_nvme_identify_controller(pcie):
         logging.info("Serial Number")
         logging.info(parsed_response_id_ctrlr.sn)
 
+        logging.info("Validating ID Controller Response")
+        Validator.validateIdControllerResponse("nvme0", id_ctrlr_resp_buf)
+
         # 7. create and identify all namespace
         logging.info("nvme_custom_basic_init: Identify namespaces (automatically)")
         nvme0.init_ns()
@@ -147,3 +152,5 @@ def test_batch_fence(prevBatchInfo, currBatchInfo):
     logging.info("Exit status")
     logging.info(exit_status)
     assert exit_status.returncode == 0, "Non zero return code from setup"
+
+    CfgStore.refreshConfig(currBatchInfo['test_config'])
