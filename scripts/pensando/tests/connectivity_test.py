@@ -121,37 +121,42 @@ def test_batch_fence(prevBatchInfo, currBatchInfo):
 
     if (prevBatchInfo):
         logging.info(prevBatchInfo)
-        if (prevBatchInfo["cleanup"]):
+        if None != prevBatchInfo["cleanup"]:
             logging.info("Cleaning up previous batch")
-            logging.info("Will invoke %s with args %s", prevBatchInfo['cleanup']['command'], prevBatchInfo['cleanup']['args'])
-            full_args = [prevBatchInfo['cleanup']['command']]
-            full_args.extend(prevBatchInfo['cleanup']['args'])
-            logging.info("Prepared full_args")
-            logging.info(full_args)
-            exit_status = subprocess.run(full_args)
-            logging.info("Exit status")
-            logging.info(exit_status)
-            assert exit_status.returncode == 0, "Non zero return code from cleanup"
+            if prevBatchInfo['cleanup']:
+                logging.info("Will invoke %s with args %s", prevBatchInfo['cleanup']['command'], prevBatchInfo['cleanup']['args'])
+                full_args = [prevBatchInfo['cleanup']['command']]
+                full_args.extend(prevBatchInfo['cleanup']['args'])
+                logging.info("Prepared full_args")
+                logging.info(full_args)
+                exit_status = subprocess.run(full_args)
+                logging.info("Exit status")
+                logging.info(exit_status)
+                assert exit_status.returncode == 0, "Non zero return code from cleanup"
+            else:
+                logging.info("No cleanup for previous batch")
         else:
-            logging.info("No cleanup command")
+            logging.info("No cleanup for previous batch command")
     else:
         logging.info("No previous cleanup")
 
     assert currBatchInfo, "currBatchInfo cannot be NULL"
-    assert currBatchInfo["setup"], "No setup info for current batch"
 
     logging.info(currBatchInfo)
 
-    logging.info("Setting up batch %s", currBatchInfo['name'])
-    logging.info("Will invoke %s with args %s", currBatchInfo['setup']['command'], currBatchInfo['setup']['args'])
-    full_args = [currBatchInfo['setup']['command']]
-    full_args.extend(currBatchInfo['setup']['args'])
-    logging.info("Prepared full_args")
-    logging.info(full_args)
-    exit_status = subprocess.run(full_args)
-    logging.info("Exit status")
-    logging.info(exit_status)
-    assert exit_status.returncode == 0, "Non zero return code from setup"
+    if None != currBatchInfo['setup']:
+        logging.info("Setting up batch %s", currBatchInfo['name'])
+        logging.info("Will invoke %s with args %s", currBatchInfo['setup']['command'], currBatchInfo['setup']['args'])
+        full_args = [currBatchInfo['setup']['command']]
+        full_args.extend(currBatchInfo['setup']['args'])
+        logging.info("Prepared full_args")
+        logging.info(full_args)
+        exit_status = subprocess.run(full_args)
+        logging.info("Exit status")
+        logging.info(exit_status)
+        assert exit_status.returncode == 0, "Non zero return code from setup"
+    else:
+        logging.info("No setup for current batch command")
 
     if (None != currBatchInfo['test_config']):
         CfgStore.refreshConfig(currBatchInfo['test_config'])

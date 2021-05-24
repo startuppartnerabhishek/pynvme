@@ -23,16 +23,16 @@
                 "name": "batch config 0 (dummy)",
 
                 "setup" : {
-                    "command": "echo",
-                    "args": ["world", "-h something"]
+                    "command": "scripts/pensando/wrappers/start_agent_basic.sh",
+                    "args": ""
                 },
 
                 "cleanup": {
-                    "command": "date",
-                    "args": []
+                    "command": "scripts/pensando/wrappers/stop_agent_basic.sh",
+                    "args": ""
                 },
 
-                "test_config": "batch0_cfg.json"
+                "test_config": "agentconf.json"
             },
 
             {
@@ -68,11 +68,12 @@
             }
         ],
 
-        "default_config": 2,
+        "default_config": 0,
 
         "batches": {
             "batch0": 0,
-            "batch1": 1
+            "batch1": 0,
+            "batch2": 0
         }
     }
 }

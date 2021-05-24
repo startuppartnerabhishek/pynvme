@@ -1181,7 +1181,7 @@ cdef class Controller(object):
         max_retries = 100000
         retries = 0
 
-        logging.debug("to reap %d admin commands" % expected); sys.stdout.flush();
+        # logging.debug("to reap %d admin commands" % expected); sys.stdout.flush();
         # some admin commands need long timeout limit, like: format,
         signal.alarm(self._timeout_pynvme)
 
@@ -1208,7 +1208,8 @@ cdef class Controller(object):
                 # executed and Python has no chance to check and run queued signal
                 # handlers.
                 # - from: https://stackoverflow.com/questions/16769870/cython-python-and-keyboardinterrupt-ignored
-                PyErr_CheckSignals()
+                if globalTestOptions["mode"] != "SIM":
+                    PyErr_CheckSignals()
 
         signal.alarm(0)
 
