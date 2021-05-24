@@ -36,6 +36,26 @@ def getConfigDeep(node_path_list):
 
     return current_node
 
+def setConfigDeep(node_path_list, new_value):
+    global gCurrentConfig
+
+    component_idx = 0
+    max = len(node_path_list)
+    current_node = gCurrentConfig
+
+    while (component_idx < max):
+        nodeName = node_path_list[component_idx]
+
+        if None == current_node[nodeName]:
+            # assign a blank disctionary at this node
+            current_node[nodeName] = {"runtime_created": 1}
+
+        current_node = current_node[nodeName]
+
+        component_idx += 1
+
+    current_node = new_value
+
 def getConfig(node_name):
     return getConfigDeep([node_name])
 
