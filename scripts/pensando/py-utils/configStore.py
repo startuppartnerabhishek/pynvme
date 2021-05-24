@@ -27,7 +27,7 @@ def getConfigDeep(node_path_list):
     while (component_idx < max) and (None != current_node):
         nodeName = node_path_list[component_idx]
 
-        if None == current_node[nodeName]:
+        if nodeName not in current_node:
             return value
         else:
             current_node = current_node[nodeName]
@@ -46,7 +46,7 @@ def setConfigDeep(node_path_list, new_value):
     while (component_idx < max):
         nodeName = node_path_list[component_idx]
 
-        if None == current_node[nodeName]:
+        if nodeName not in current_node:
             # assign a blank disctionary at this node
             current_node[nodeName] = {"runtime_created": 1}
 

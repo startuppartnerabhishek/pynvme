@@ -115,36 +115,37 @@ def test_nvme_identify_controller(pcie):
 
     logging.info("test_nvme_identify_controller: test completed SUCCESSFULLY =======================")
 
+# pytest appears to ignore duplicate test-names, so we create wrappers to call this logic
+# to get many fences in our batch of tests
 def test_batch_fence(prevBatchInfo, currBatchInfo):
-
-    logging.info("Batch marker (not a real test)")
+    logging.info("Batch marker (not a real test) - prev and current")
+    logging.info(prevBatchInfo)
+    logging.info(currBatchInfo)
 
     if (prevBatchInfo):
         logging.info(prevBatchInfo)
-        if None != prevBatchInfo["cleanup"]:
+        if "cleanup" in prevBatchInfo:
             logging.info("Cleaning up previous batch")
-            if prevBatchInfo['cleanup']:
-                logging.info("Will invoke %s with args %s", prevBatchInfo['cleanup']['command'], prevBatchInfo['cleanup']['args'])
-                full_args = [prevBatchInfo['cleanup']['command']]
-                full_args.extend(prevBatchInfo['cleanup']['args'])
-                logging.info("Prepared full_args")
-                logging.info(full_args)
-                exit_status = subprocess.run(full_args)
-                logging.info("Exit status")
-                logging.info(exit_status)
-                assert exit_status.returncode == 0, "Non zero return code from cleanup"
-            else:
-                logging.info("No cleanup for previous batch")
+            
+            logging.info("Will invoke %s with args %s", prevBatchInfo['cleanup']['command'], prevBatchInfo['cleanup']['args'])
+            full_args = [prevBatchInfo['cleanup']['command']]
+            full_args.extend(prevBatchInfo['cleanup']['args'])
+            logging.info("Prepared full_args")
+            logging.info(full_args)
+            exit_status = subprocess.run(full_args)
+            logging.info("Exit status")
+            logging.info(exit_status)
+            assert exit_status.returncode == 0, "Non zero return code from cleanup"
         else:
             logging.info("No cleanup for previous batch command")
     else:
-        logging.info("No previous cleanup")
+        logging.info("No previous batch info")
 
     assert currBatchInfo, "currBatchInfo cannot be NULL"
 
     logging.info(currBatchInfo)
 
-    if None != currBatchInfo['setup']:
+    if "setup" in currBatchInfo:
         logging.info("Setting up batch %s", currBatchInfo['name'])
         logging.info("Will invoke %s with args %s", currBatchInfo['setup']['command'], currBatchInfo['setup']['args'])
         full_args = [currBatchInfo['setup']['command']]
@@ -158,5 +159,89 @@ def test_batch_fence(prevBatchInfo, currBatchInfo):
     else:
         logging.info("No setup for current batch command")
 
-    if (None != currBatchInfo['test_config']):
+    if ("test_config" in currBatchInfo):
         CfgStore.refreshConfig(currBatchInfo['test_config'])
+
+    logging.info("Fence completed")
+
+def test_batch_final_cleanup(testFinalCleanup):
+    logging.info("Cleaning up batch test setup")
+
+    logging.info(testFinalCleanup)
+
+    if None != testFinalCleanup:
+        assert "command" in testFinalCleanup, "No command!"
+        logging.info("Will invoke %s with args %s", testFinalCleanup['command'], testFinalCleanup['args'])
+        full_args = [testFinalCleanup['command']]
+        full_args.extend(testFinalCleanup['args'])
+        logging.info("Prepared full_args")
+        logging.info(full_args)
+        exit_status = subprocess.run(full_args)
+
+        assert exit_status.returncode == 0, "Non zero return code from command"
+
+    logging.info("Batch Test setup cleaned up")
+
+def test_batch_fence1(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence1 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence2(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence2 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence3(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence3 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence4(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence4 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence5(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence5 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence6(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence6 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence7(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence7 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence8(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence8 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence9(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence9 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence10(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence10 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence11(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence11 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence12(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence12 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence13(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence13 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence14(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence14 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence15(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence15 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence16(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence16 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
