@@ -221,14 +221,25 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture(scope="function")
 def currBatchInfo():
-    ret = globalBatchCtrl.getCurrentBatch(False)
+    logging.info("Fixture currBatchInfo: evaluating for batch %d", globalBatchCtrl.getCurrentBatchNumber())
+    ret = globalBatchCtrl.moveToNextBatch()
+    logging.info("currBatchInfo = ")
+    logging.info(ret)
     yield ret
 
 @pytest.fixture(scope="function")
 def prevBatchInfo():
-    if (globalBatchCtrl.getCurrentBatchNumber() == 0):
+    logging.info("Fixture prevBatchInfo: evaluating for batch %d", globalBatchCtrl.getCurrentBatchNumber())
+    if (globalBatchCtrl.getCurrentBatchNumber() < 0):
         ret = None
     else:
-        ret = globalBatchCtrl.getCurrentBatch(True)
+        ret = globalBatchCtrl.getCurrentBatch(False)
+    logging.info("prevBatchInfo = ")
+    logging.info(ret)
+    yield ret
+
+@pytest.fixture(scope="function")
+def testFinalCleanup():
+    ret = globalBatchCtrl.getFinalCleanup()
 
     yield ret

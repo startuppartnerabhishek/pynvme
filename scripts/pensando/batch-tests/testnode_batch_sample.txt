@@ -1,11 +1,13 @@
-scripts/pensando/tests/connectivity_test.py::test_batch_fence
+scripts/pensando/tests/connectivity_test.py::test_batch_fence1
 scripts/pensando/tests/connectivity_test.py::test_py_invocation
 scripts/pensando/tests/connectivity_test.py::test_py_invocation_sample_failure
 scripts/pensando/tests/connectivity_test.py::test_driver_common_reachability
-scripts/pensando/tests/connectivity_test.py::test_batch_fence
+scripts/pensando/tests/connectivity_test.py::test_batch_fence2
 scripts/pensando/tests/connectivity_test.py::test_nvme_identify_controller
-scripts/pensando/tests/connectivity_test.py::test_batch_fence
+scripts/pensando/tests/connectivity_test.py::test_batch_fence3
 driver_test.py::test_get_identify
-scripts/pensando/tests/connectivity_test.py::test_batch_fence
+scripts/pensando/tests/connectivity_test.py::test_batch_fence4
 driver_test.py::test_command_supported_and_effect
+scripts/pensando/tests/connectivity_test.py::test_batch_fence5
 driver_test.py::test_admin_generic_cmd
+scripts/pensando/tests/connectivity_test.py::test_batch_final_cleanup
