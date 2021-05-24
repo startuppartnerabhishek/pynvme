@@ -1145,7 +1145,7 @@ static void init_sim_config(char *json_string)
         CONF_FILE_PARSE_ENTRY((&g_sim_config), log_register_writes, false),
         CONF_FILE_PARSE_ENTRY((&g_sim_config), log_buf_alloc_free, false),
         CONF_FILE_PARSE_ENTRY((&g_sim_config), max_log_entries_per_qpair, false),
-        CONF_FILE_PARSE_ENTRY((&g_sim_config), log_dump_adminq_completion_len, false)
+        CONF_FILE_PARSE_ENTRY((&g_sim_config), log_dump_adminq_completion_bytes, false)
     };
 
     const unsigned int num_items = sizeof(sim_global_cfg_file_items) / sizeof(sim_config_item_t);
