@@ -153,4 +153,5 @@ def test_batch_fence(prevBatchInfo, currBatchInfo):
     logging.info(exit_status)
     assert exit_status.returncode == 0, "Non zero return code from setup"
 
-    CfgStore.refreshConfig(currBatchInfo['test_config'])
+    if (None != currBatchInfo['test_config']):
+        CfgStore.refreshConfig(currBatchInfo['test_config'])
