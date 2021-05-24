@@ -1178,6 +1178,8 @@ cdef class Controller(object):
         global _aer_waitdone
         _aer_resend = 0
         _aer_waitdone = 0
+        max_retries = 100000
+        retries = 0
 
         logging.debug("to reap %d admin commands" % expected); sys.stdout.flush();
         # some admin commands need long timeout limit, like: format,
@@ -1187,15 +1189,27 @@ cdef class Controller(object):
             # wait admin Q pair done
             reaped += d.nvme_wait_completion_admin(self.pcie._ctrlr)
 
-            # Since signals are delivered asynchronously at unpredictable
-            # times, it is problematic to run any meaningful code directly
-            # from the signal handler. Therefore, Python queues incoming
-            # signals. The queue is processed later as part of the interpreter
-            # loop. If your code is fully compiled, interpreter loop is never
-            # executed and Python has no chance to check and run queued signal
-            # handlers.
-            # - from: https://stackoverflow.com/questions/16769870/cython-python-and-keyboardinterrupt-ignored
-            PyErr_CheckSignals()
+            # logging.debug("reaped %d total" % reaped); sys.stdout.flush();
+            retries += 1
+
+            if retries >= max_retries:
+                assert reaped >= expected, "too many retries to reap completions"
+
+            if retries % 16 == 0:
+                # (Pensando change - Abhishek)
+                # making this less frequent to check if it affects getthreadstate crash
+
+                # Originally this was in the main while loop
+                # Since signals are delivered asynchronously at unpredictable
+                # times, it is problematic to run any meaningful code directly
+                # from the signal handler. Therefore, Python queues incoming
+                # signals. The queue is processed later as part of the interpreter
+                # loop. If your code is fully compiled, interpreter loop is never
+                # executed and Python has no chance to check and run queued signal
+                # handlers.
+                # - from: https://stackoverflow.com/questions/16769870/cython-python-and-keyboardinterrupt-ignored
+                PyErr_CheckSignals()
+
         signal.alarm(0)
 
         # in admin queue, may reap more than expected, because driver

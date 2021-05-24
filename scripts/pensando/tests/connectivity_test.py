@@ -102,7 +102,7 @@ def test_nvme_identify_controller(pcie):
         logging.info(parsed_response_id_ctrlr.sn)
 
         logging.info("Validating ID Controller Response")
-        Validator.validateIdControllerResponse("nvme0", id_ctrlr_resp_buf)
+        Validator.controllerValidateResponse("nvme0", id_ctrlr_resp_buf)
 
         # 7. create and identify all namespace
         logging.info("nvme_custom_basic_init: Identify namespaces (automatically)")
