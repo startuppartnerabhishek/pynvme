@@ -20,7 +20,7 @@ typedef struct sim_config_s {
     unsigned int    log_register_reads;
     unsigned int    log_register_writes;
     unsigned int    log_buf_alloc_free;
-    unsigned int    log_dump_adminq_completion_len;
+    unsigned int    log_dump_adminq_completion_bytes;
     unsigned int    max_log_entries_per_qpair;
 } sim_config_t;
 
