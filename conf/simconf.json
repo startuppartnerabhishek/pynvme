@@ -18,6 +18,12 @@
     },
 
     "batch_config": {
+
+        "test_initial_setup": {
+            "command": "scripts/pensando/wrappers/configure_nvme_linux_target.sh",
+            "args": []
+        },
+
         "configs": [
             {
                 "name": "batch config 0 (catch all)",
@@ -32,7 +38,7 @@
                     "args": []
                 },
 
-                "test_config": "conf/agentconf.json"
+                "test_config": "conf/agentconf.json;conf/partagentconf.json"
             },
 
             {

@@ -2,7 +2,6 @@
 
 CONF_DIR=./conf
 CONF_FILE=${CONF_DIR}/simconf.json
-AGENT_CONF_FILE=${CONF_DIR}/agentconf.json
 AGENT_START_DELAY=5
 
 NSV_ROOT_DIR=$(jq -rj .global.nsv_test_root_path ${CONF_FILE})

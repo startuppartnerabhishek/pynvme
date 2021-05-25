@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 import configStore as CfgStore
 import cParser as Parser
@@ -49,24 +50,28 @@ class FieldString(Field):
         fullPathAsList.extend(self.pathToCfgField)
 
         # convert the config value (string) to an array of ascii codes, before comarison
-        cfgValue = list( map( ord, (CfgStore.getConfigDeep(fullPathAsList))))
+        cfgValue = CfgStore.getConfigDeep(fullPathAsList)
 
         if None == cfgValue:
             # value not found in store, don't fail the test
+            warnings.warn("(STR) NOT FOUND in store " + rootObj + "." + self.structNodeInCfg)
+            logging.warning("(STR) %s should have been in Cfg Store at %s.%s", self.name, rootObj, self.pathToCfgField)
+            logging.warning(CfgStore.getAllConfig())
             return
 
-        shortenedCompvalue = specValue[0:len(cfgValue)]
+        cfgValueAsAscii = list( map( ord, cfgValue))
 
-        if shortenedCompvalue != cfgValue:
+        shortenedCompvalue = specValue[0:len(cfgValueAsAscii)]
+
+        if shortenedCompvalue != cfgValueAsAscii:
             logging.error("Object %s, field %s, path %s, spec-field %s type STR", rootObj, self.name, self.structNodeInCfg, self.structNodeInSpec)
             logging.error("Expected (and expected as byte-array)")
             logging.error(CfgStore.getConfigDeep(fullPathAsList))
             logging.error(cfgValue)
-            logging.error("Got (raw, compirson-range)")
+            logging.error("Got (raw, comparison-range)")
             logging.error(specValue)
             logging.error(shortenedCompvalue)
             assert False
-
 
 class FieldInt(Field):
     def __init__(self, name, nodeInCfg, nodeInSpec):
@@ -78,16 +83,21 @@ class FieldInt(Field):
         fullPathAsList = rootObj.split('.') # rootObj can itself be a path, e.g. nvme0.nn0
         fullPathAsList.extend(self.pathToCfgField)
 
-        cfgValue = int(CfgStore.getConfigDeep(fullPathAsList))
+        cfgValue = CfgStore.getConfigDeep(fullPathAsList)
 
         if None == cfgValue:
             # value not found in store, don't fail the test
+            warnings.warn("(INT) NOT FOUND in store " + rootObj + "." + self.structNodeInCfg)
+            logging.warning("(INT) %s should have been in Cfg Store at %s.%s", self.name, rootObj, self.pathToCfgField)
+            logging.warning(CfgStore.getAllConfig())
             return
 
-        if cfgValue != specValue:
+        cfgAsInt = int(cfgValue, 0)
+
+        if cfgAsInt != specValue:
             logging.error("Object %s, field %s, path %s, spec-field %s type INT", rootObj, self.name, self.structNodeInCfg, self.structNodeInSpec)
             logging.error("Expected")
-            logging.error(cfgValue)
+            logging.error(cfgAsInt)
             logging.error("Got")
             logging.error(specValue)
             assert False
@@ -111,7 +121,8 @@ class StructValidator:
 # instantiate controllers
 gControllerValidator = StructValidator([
     FieldInt("Vendor Id", "vid", "vid"),
-    FieldString("Serial Number", "serial", "sn")
+    FieldString("Serial Number", "serial", "sn"),
+    FieldInt("Version", "version", "ver.raw"),
 ], "spdk_nvme_ctrlr_data")
 
 # external API

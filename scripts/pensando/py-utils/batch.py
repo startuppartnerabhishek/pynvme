@@ -6,6 +6,7 @@ gBatchCfgKeyConfigs = "configs"
 gBatchCfgKeyDefault = "default_config"
 gBatchCfgKeyBatchMap = "batches"
 gBatchCfgFinalCleanup = "test_final_cleanup"
+gBatchCfgInitialSetup = "test_initial_setup"
 
 gBatchNamePrefix = "batch"
 
@@ -22,6 +23,7 @@ class BatchControl():
         self.__defaultConfigIdx = 0
         self.__batchToConfigIdMap = {}
         self.__finalCleanup = None
+        self.__initialSetup = None
 
     def __configure(self, jsonConf):
 
@@ -43,6 +45,9 @@ class BatchControl():
 
             if gBatchCfgFinalCleanup in rootConfig:
                 self.__finalCleanup = rootConfig[gBatchCfgFinalCleanup]
+
+            if gBatchCfgInitialSetup in rootConfig:
+                self.__initialSetup = rootConfig[gBatchCfgInitialSetup]
 
     def print(self):
         print(self); sys.stdout.flush();
@@ -75,3 +80,6 @@ class BatchControl():
 
     def getFinalCleanup(self):
         return self.__finalCleanup
+
+    def getInitialSetup(self):
+        return self.__initialSetup

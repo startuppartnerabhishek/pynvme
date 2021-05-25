@@ -133,23 +133,23 @@ def script(request):
 
 @pytest.fixture(scope="session")
 def pciaddr(request):
-    logging.info("fixture pciaddr(request %s)" % request)
+    logging.debug("fixture pciaddr(request %s)" % request)
     if globalTestOptions["mode"] == "PCIE":
-        logging.info("returning pciaddr %s" % request.config.getoption("--pciaddr"))
+        logging.debug("returning pciaddr %s" % request.config.getoption("--pciaddr"))
         return request.config.getoption("--pciaddr")
     else:
-        logging.info("returning config instead of pciaddr %s" % globalTestOptions["config_as_string"])
+        logging.debug("returning config instead of pciaddr %s" % globalTestOptions["config_as_string"])
         return globalTestOptions["config_as_string"]
 
 @pytest.fixture(scope="function")
 def pcie(pciaddr):
-    logging.info("fixture pcie(pcieaddr %s)" % pciaddr); sys.stdout.flush();
+    logging.debug("fixture pcie(pcieaddr %s)" % pciaddr); sys.stdout.flush();
 
     if globalTestOptions["mode"] == "PCIE":
-        logging.info("fixture pcie [PCIE] - creating Pcie object with addr %s" % pciaddr); sys.stdout.flush();
+        logging.debug("fixture pcie [PCIE] - creating Pcie object with addr %s" % pciaddr); sys.stdout.flush();
         ret = d.Pcie(pciaddr, 0, "PCIE")
     else:
-        logging.info("fixture pcie [SIM] - creating Pcie object to access nvme0 with config %s" % globalTestOptions["config_json"]["nvme0"]); sys.stdout.flush();
+        logging.debug("fixture pcie [SIM] - creating Pcie object to access nvme0 with config %s" % globalTestOptions["config_json"]["nvme0"]); sys.stdout.flush();
         ret = d.Pcie(json.dumps(globalTestOptions["config_json"]["nvme0"]), 0, "SIM")
     yield ret
     ret.close()
@@ -157,10 +157,10 @@ def pcie(pciaddr):
 @pytest.fixture(scope="function")
 def nvme0(pcie):
     ret = None
-    logging.info("fixture nvme0(pcie)"); sys.stdout.flush();
+    logging.debug("fixture nvme0(pcie)"); sys.stdout.flush();
     ret = d.Controller(pcie)
-    logging.info("fixture nvme0 - got controller object"); sys.stdout.flush();
-    logging.info(ret); sys.stdout.flush();
+    logging.debug("fixture nvme0 - got controller object"); sys.stdout.flush();
+    logging.debug(ret); sys.stdout.flush();
     yield ret
 
 @pytest.fixture(scope="function")
@@ -241,5 +241,11 @@ def prevBatchInfo():
 @pytest.fixture(scope="function")
 def testFinalCleanup():
     ret = globalBatchCtrl.getFinalCleanup()
+
+    yield ret
+
+@pytest.fixture(scope="function")
+def testInitialSetup():
+    ret = globalBatchCtrl.getInitialSetup()
 
     yield ret
