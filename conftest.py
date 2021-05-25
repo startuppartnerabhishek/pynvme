@@ -107,6 +107,7 @@ def pytest_configure(config):
     globalBatchCtrl = B.BatchControl(sim_config)
 
     CfgStore.refreshConfig(agentconf)
+    # CfgStore.refreshConfig("conf/agentconf.json;conf/partagentconf.json")
 
     globalBatchCtrl.print()
 
@@ -221,21 +222,21 @@ def pytest_runtest_makereport(item, call):
 
 @pytest.fixture(scope="function")
 def currBatchInfo():
-    logging.info("Fixture currBatchInfo: evaluating for batch %d", globalBatchCtrl.getCurrentBatchNumber())
+    logging.debug("Fixture currBatchInfo: evaluating for batch %d", globalBatchCtrl.getCurrentBatchNumber())
     ret = globalBatchCtrl.moveToNextBatch()
-    logging.info("currBatchInfo = ")
-    logging.info(ret)
+    logging.debug("currBatchInfo = ")
+    logging.debug(ret)
     yield ret
 
 @pytest.fixture(scope="function")
 def prevBatchInfo():
-    logging.info("Fixture prevBatchInfo: evaluating for batch %d", globalBatchCtrl.getCurrentBatchNumber())
+    logging.debug("Fixture prevBatchInfo: evaluating for batch %d", globalBatchCtrl.getCurrentBatchNumber())
     if (globalBatchCtrl.getCurrentBatchNumber() < 0):
         ret = None
     else:
         ret = globalBatchCtrl.getCurrentBatch(False)
-    logging.info("prevBatchInfo = ")
-    logging.info(ret)
+    logging.debug("prevBatchInfo = ")
+    logging.debug(ret)
     yield ret
 
 @pytest.fixture(scope="function")
