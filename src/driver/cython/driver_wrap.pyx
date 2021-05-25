@@ -1178,7 +1178,7 @@ cdef class Controller(object):
         global _aer_waitdone
         _aer_resend = 0
         _aer_waitdone = 0
-        max_retries = 100000
+        max_retries = 99999999
         retries = 0
 
         # logging.debug("to reap %d admin commands" % expected); sys.stdout.flush();

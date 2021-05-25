@@ -182,6 +182,26 @@ def test_batch_final_cleanup(testFinalCleanup):
 
     logging.info("Batch Test setup cleaned up")
 
+def test_batch_initial_setup(testInitialSetup):
+    logging.info("Setting up batch tests")
+
+    logging.info(testInitialSetup)
+
+    if None != testInitialSetup:
+        assert "command" in testInitialSetup, "No command!"
+        logging.info("Will invoke %s with args %s", testInitialSetup['command'], testInitialSetup['args'])
+        full_args = [testInitialSetup['command']]
+        full_args.extend(testInitialSetup['args'])
+        logging.info("Prepared full_args")
+        logging.info(full_args)
+        exit_status = subprocess.run(full_args)
+
+        logging.info(exit_status)
+
+        assert exit_status.returncode == 0, "Non zero return code from command"
+
+    logging.info("Batch Test setup completed")
+
 def test_batch_fence1(prevBatchInfo, currBatchInfo):
     logging.info("test_batch_fence1 redirects to test_batch_fence")
     test_batch_fence(prevBatchInfo, currBatchInfo)

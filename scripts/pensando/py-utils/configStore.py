@@ -2,18 +2,51 @@ import json
 import logging
 
 gCurrentConfig = None
+gConfigFileListSeparator = ';'
 
-def refreshConfig(config_file):
+def refreshConfig(config_files):
     global gCurrentConfig
+    global gConfigFileListSeparator
+    i = 0
 
-    if (None == config_file):
-        gCurrentConfig = None
+    gCurrentConfig = None
+
+    if (None == config_files):
         return
 
-    with open(config_file, "r") as f:
-        gCurrentConfig = json.load(f)
+    cfg_file_list = config_files.split(gConfigFileListSeparator)
+    fileCount = len(cfg_file_list)
 
-    logging.info("Refreshed with Config from file %s", config_file)
+    # print("%s - %u file(s)", cfg_file_list, fileCount)
+
+    if (fileCount <= 0):
+        return
+
+    gCurrentConfig = {}
+
+    # top level keys can be common, but internal keys should not conflict
+    while i < fileCount:
+        config_file = cfg_file_list[i]
+        i += 1
+
+        with open(config_file, "r") as f:
+            aConfig = json.load(f)
+            # print("Existing config")
+            # print(gCurrentConfig)
+
+            # print("Got new config from file %s", config_file)
+            # print(aConfig)
+
+            for k in aConfig:
+                if k in gCurrentConfig:
+                    gCurrentConfig[k].update(aConfig[k])
+                else:
+                    gCurrentConfig[k] = aConfig[k]
+
+            # print("Updated config")
+            # print(gCurrentConfig)
+
+    logging.info("Refreshed with Config from file(s) %s", cfg_file_list)
     logging.info(gCurrentConfig)
 
 def getConfigDeep(node_path_list):
@@ -66,7 +99,7 @@ def compareConfig(value, root_obj, property, type="int"):
         return (config_value == value)
 
     if (type == "int"):
-        config_value = int(config_value)
+        config_value = int(config_value, 0)
 
     return (config_value == value)
 
@@ -80,6 +113,9 @@ def compareConfigDeep(value, root_obj, node_name_list, type="int"):
         return (config_value == value)
 
     if (type == "int"):
-        config_value = int(config_value)
+        config_value = int(config_value, 0)
 
     return (config_value == value)
+
+def getAllConfig():
+    return gCurrentConfig
