@@ -164,7 +164,8 @@ gControllerValidator = StructValidator([
     FieldString("Serial Number", "serial_no", "sn"),
     FieldString("NQN", "nqn", "subnqn"),
     FieldString("Model Number", "nqn", "subnqn"),
-    FieldInt("Namespace Count", "ns_count", "nn")
+    FieldInt("Namespace Count", "ns_count", "nn"),
+    FieldString("Firmware Revision", "fw_rev", "fr")
 ], "spdk_nvme_ctrlr_data", "Identify Controller Response")
 
 # external API
