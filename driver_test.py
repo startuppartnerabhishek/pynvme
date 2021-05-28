@@ -1461,7 +1461,7 @@ def test_dst_short(nvme0, nsid):
     nvme0.dst(1, nsid).waitdone()
 
     # check dst log page till no dst in progress
-    buf = d.Buffer(4096)
+    buf = d.Buffer(nvme0, 4096)
     nvme0.getlogpage(0x6, buf, 32).waitdone()
     while buf[0]:
         logging.info("current dst progress percentage: %d%%" % buf[1])
@@ -1473,7 +1473,7 @@ def test_dst_extended(nvme0):
     nvme0.dst(2).waitdone()
 
     # check dst log page till no dst in progress
-    buf = d.Buffer(4096)
+    buf = d.Buffer(nvme0, 4096)
     nvme0.getlogpage(0x6, buf, 32).waitdone()
     while buf[0]:
         logging.info("current dst progress percentage: %d%%" % buf[1])

@@ -1,7 +1,7 @@
 {
     "global": {
-        "agent_runtime_rootpath": "../../../sim/fork-1/nsv_test/run/",
-        "nsv_test_root_path": "../../../sim/fork-1/nsv_test/",
+        "agent_runtime_rootpath": "../../../sim/nvme-test-repo-2021-05-28/nvme-test/run/",
+        "nsv_test_root_path": "../../../sim/nvme-test-repo-2021-05-28/nvme-test/",
         "log_register_reads": 0,
         "log_register_writes": 0,
         "log_buf_alloc_free": 1,
