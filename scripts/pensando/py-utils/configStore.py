@@ -14,13 +14,13 @@ gNameSpacePrefix = "ns"
 
 
 # translate incoming config to a format easily usable for pynvme tests
-def __translateConfigNsvTestCfg(aCfg):
+def __translateConfigNsvTestCfg(aCfg, controllerCount):
     newConfig = {}
-    ctrlrCount = int(0)
+    ctrlrCount = controllerCount
     nsCount = int(0)
 
     if __gNsvCfgCtrlrTag not in aCfg:
-        return newConfig
+        return newConfig, ctrlrCount
 
     for aCtrlr in aCfg[__gNsvCfgCtrlrTag]:
         ctrlrNodeName = gControllerPrefix + str(ctrlrCount)
@@ -41,12 +41,13 @@ def __translateConfigNsvTestCfg(aCfg):
 
         ctrlrCount += 1
 
-    return newConfig
+    return newConfig, ctrlrCount
 
 def refreshConfig(config_files):
     global __gCurrentConfig
     global gConfigFileListSeparator
     i = 0
+    controllerCount = 0
 
     __gCurrentConfig = None
 
@@ -76,8 +77,11 @@ def refreshConfig(config_files):
             # print("Got new config from file %s", config_file)
             # print(aConfig)
 
-            translatedConfig = __translateConfigNsvTestCfg(aConfig)
+            translatedConfig, newControllers = __translateConfigNsvTestCfg(aConfig, controllerCount)
 
+            controllerCount += newControllers
+
+            # make a best effort to merge top-level config-store keys
             for k in translatedConfig:
                 if k in __gCurrentConfig:
                     __gCurrentConfig[k].update(aConfig[k])
@@ -87,7 +91,7 @@ def refreshConfig(config_files):
             # print("Updated config")
             # print(__gCurrentConfig)
 
-    logging.info("Refreshed with Config from file(s) %s", cfg_file_list)
+    logging.info("Refreshed with Config from file(s) %s, %u controllers", cfg_file_list, controllerCount)
     logging.info(__gCurrentConfig)
 
 def getConfigDeep(node_path_list):
