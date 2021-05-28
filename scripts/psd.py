@@ -370,7 +370,7 @@ class IOCQ(object):
 
 
 def test_create_delete_iocq(nvme0):
-    buf = Buffer(4096)
+    buf = d.Buffer(nvme0, 4096)
 
     cq1 = IOCQ(nvme0, 5, 5, buf)
 
@@ -472,10 +472,10 @@ def test_send_single_cmd(nvme0):
 
 
 @pytest.mark.parametrize("count", [1, 2, 8, 500, 512])
-def test_prp_and_prp_list(count):
+def test_prp_and_prp_list(nvme0, count):
     l = PRPList()
     for i in range(count):
-        l[i] = Buffer()
+        l[i] = Buffer(nvme0)
 
 
 def test_prp_and_prp_list_with_offset():
@@ -496,10 +496,10 @@ def test_prp_and_prp_list_with_offset():
     assert l[9].phys_addr&0xfff == 0x30
 
 
-def test_prp_and_prp_list_invalid():
+def test_prp_and_prp_list_invalid(nvme0):
     l = PRPList()
     with pytest.raises(AssertionError):
-        l[512] = Buffer()
+        l[512] = Buffer(nvme0)
 
         
 @pytest.mark.parametrize("qdepth", [7, 2, 3, 4, 5, 10, 16, 17, 31])
