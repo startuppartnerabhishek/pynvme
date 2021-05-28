@@ -10,4 +10,6 @@ scripts/pensando/tests/connectivity_test.py::test_batch_fence4
 driver_test.py::test_command_supported_and_effect
 scripts/pensando/tests/connectivity_test.py::test_batch_fence5
 driver_test.py::test_admin_generic_cmd
+scripts/pensando/tests/connectivity_test.py::test_batch_fence6
+scripts/psd.py::test_create_delete_iocq
 scripts/pensando/tests/connectivity_test.py::test_batch_final_cleanup
