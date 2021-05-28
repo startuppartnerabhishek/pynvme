@@ -1,20 +1,59 @@
 import json
 import logging
 
-gCurrentConfig = None
-gConfigFileListSeparator = ';'
+__gCurrentConfig = None
+__gConfigFileListSeparator = ';'
+
+__gNsvCfgCtrlrTag = "ctrlr_list"
+__gNsvCfgCtrlrNsTag = "ns_list"
+gCtrlrNsCountTag = "ns_count"
+
+# example, access with rootObj = "nvme2", or "nvme1.ns2" etc.
+gControllerPrefix = "nvme"
+gNameSpacePrefix = "ns"
+
+
+# translate incoming config to a format easily usable for pynvme tests
+def __translateConfigNsvTestCfg(aCfg):
+    newConfig = {}
+    ctrlrCount = int(0)
+    nsCount = int(0)
+
+    if __gNsvCfgCtrlrTag not in aCfg:
+        return newConfig
+
+    for aCtrlr in aCfg[__gNsvCfgCtrlrTag]:
+        ctrlrNodeName = gControllerPrefix + str(ctrlrCount)
+
+        newConfig[ctrlrNodeName] = aCtrlr
+
+        nsCount = int(0)
+
+        if __gNsvCfgCtrlrNsTag in aCtrlr:
+            for ns in aCtrlr[__gNsvCfgCtrlrNsTag]:
+                nsNodeName = gNameSpacePrefix + str(nsCount)
+
+                newConfig[ctrlrNodeName][nsNodeName] = ns
+
+                nsCount += 1
+
+        newConfig[ctrlrNodeName][gCtrlrNsCountTag] = nsCount
+
+        ctrlrCount += 1
+
+    return newConfig
 
 def refreshConfig(config_files):
-    global gCurrentConfig
+    global __gCurrentConfig
     global gConfigFileListSeparator
     i = 0
 
-    gCurrentConfig = None
+    __gCurrentConfig = None
 
     if (None == config_files):
         return
 
-    cfg_file_list = config_files.split(gConfigFileListSeparator)
+    cfg_file_list = config_files.split(__gConfigFileListSeparator)
     fileCount = len(cfg_file_list)
 
     # print("%s - %u file(s)", cfg_file_list, fileCount)
@@ -22,7 +61,7 @@ def refreshConfig(config_files):
     if (fileCount <= 0):
         return
 
-    gCurrentConfig = {}
+    __gCurrentConfig = {}
 
     # top level keys can be common, but internal keys should not conflict
     while i < fileCount:
@@ -32,30 +71,32 @@ def refreshConfig(config_files):
         with open(config_file, "r") as f:
             aConfig = json.load(f)
             # print("Existing config")
-            # print(gCurrentConfig)
+            # print(__gCurrentConfig)
 
             # print("Got new config from file %s", config_file)
             # print(aConfig)
 
-            for k in aConfig:
-                if k in gCurrentConfig:
-                    gCurrentConfig[k].update(aConfig[k])
+            translatedConfig = __translateConfigNsvTestCfg(aConfig)
+
+            for k in translatedConfig:
+                if k in __gCurrentConfig:
+                    __gCurrentConfig[k].update(aConfig[k])
                 else:
-                    gCurrentConfig[k] = aConfig[k]
+                    __gCurrentConfig[k] = translatedConfig[k]
 
             # print("Updated config")
-            # print(gCurrentConfig)
+            # print(__gCurrentConfig)
 
     logging.info("Refreshed with Config from file(s) %s", cfg_file_list)
-    logging.info(gCurrentConfig)
+    logging.info(__gCurrentConfig)
 
 def getConfigDeep(node_path_list):
-    global gCurrentConfig
+    global __gCurrentConfig
 
     value = None
     component_idx = 0
     max = len(node_path_list)
-    current_node = gCurrentConfig
+    current_node = __gCurrentConfig
 
     while (component_idx < max) and (None != current_node):
         nodeName = node_path_list[component_idx]
@@ -70,11 +111,11 @@ def getConfigDeep(node_path_list):
     return current_node
 
 def setConfigDeep(node_path_list, new_value):
-    global gCurrentConfig
+    global __gCurrentConfig
 
     component_idx = 0
     max = len(node_path_list)
-    current_node = gCurrentConfig
+    current_node = __gCurrentConfig
 
     while (component_idx < max):
         nodeName = node_path_list[component_idx]
@@ -118,4 +159,4 @@ def compareConfigDeep(value, root_obj, node_name_list, type="int"):
     return (config_value == value)
 
 def getAllConfig():
-    return gCurrentConfig
+    return __gCurrentConfig

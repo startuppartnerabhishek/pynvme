@@ -38,7 +38,7 @@
                     "args": []
                 },
 
-                "test_config": "conf/agentconf.json;conf/partagentconf.json"
+                "test_config": "../../../sim/nvme-test-repo-2021-05-28/nvme-test/tools/nvme_testcfg.json"
             },
 
             {
