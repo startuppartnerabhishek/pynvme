@@ -1,0 +1,194 @@
+{
+    "ini_dev_list": [
+    {
+        "name" : "ini_dev0",
+        "key": 200001,
+        "host_id": "00112233445566778899AABBCCDDEEFF",
+        "nqn": "nqn.2019-08.com.pensando:nvm-subsystem-sn-112233445566"
+    }
+    ],
+
+    "ini_port_list": [
+    {
+        "name" : "ini_port0",
+        "key": 300001,
+        "dev" : "ini_dev0",
+        "ip": "127.0.0.1"
+    }
+    ],
+
+    "tgt_subsys_list": [
+    {
+        "name": "tgt_subsys0",
+        "key": 400001,
+        "nqn": "nqn.2016-06.io.spdk:cnode1",
+        "ctrlr_type": "dynamic",
+        "keep_alive_timeout" : 200000,
+        "ddst_en" : 1,
+        "hdst_en" : 1,
+        "admin_qsize": 32,
+        "io_qsize": 256
+    }
+    ],
+
+    "tgt_port_list": [
+    {
+        "name" : "tgt_port0",
+        "key": 600001,
+        "subsys": "tgt_subsys0",
+        "ip": "127.0.0.2",
+        "port": "4420"
+    },
+    {
+        "name" : "tgt_port1",
+        "key": 600002,
+        "subsys": "tgt_subsys0",
+        "ip": "127.0.0.3",
+        "port": "4420"
+    }
+    ],
+
+    "path_list": [
+        {
+           "name": "path0",
+           "ini_port": "ini_port0",
+           "tgt_port": "tgt_port0"
+        },
+        {
+           "name": "path1",
+           "ini_port": "ini_port0",
+           "tgt_port": "tgt_port1"
+        }
+    ],
+
+    "ctrlr_list": [
+        {
+            "name": "dev0_ctrlr0",
+            "key": 800001,
+            "dev_no": 0,
+            "vf_no": 0,
+            "failover_mode": "qid",
+            "num_session": 256,
+            "num_namespace": 4,
+            "model_no": "pds-nvme2021",
+            "serial_no": "pds-112233",
+            "fw_rev": "ver1.0",
+            "fru_guid": "de45f7e4-8bd6-11eb-a4c6-482ae345b8cc",
+            "nqn": "nqn.2019-08.com.pensando:nvm-subsystem-sn-112233445566",
+            "ns_list": [
+                {
+                    "name" : "ctrlr0_ns1",
+                    "key": 1100001,
+                    "tgt_nsid": 1,
+                    "size_gb": 1,
+                    "guid": "a7b93234-a370-11eb-885d-482ae345b8cc",
+                    "eui": "d0c0n001",
+                    "blksz": 4096,
+                    "num_session": 64,
+                    "active_paths_per_grp": 1,
+                    "path_en_no_wait": 0,
+                    "paths": [
+                        {
+                            "path": "path0",
+                            "key_start": 100,
+                            "gid_start": 0,
+                            "count": 2,
+                            "qid": 0
+                        },
+                        {
+                            "path": "path1",
+                            "key_start": 200,
+                            "gid_start": 15,
+                            "count": 2,
+                            "qid": 0
+                        }
+                    ]
+                },
+                {
+                    "name" : "ctrlr0_ns2",
+                    "key": 1100002,
+                    "tgt_nsid": 2,
+                    "size_gb": 2,
+                    "guid": "eb3be1ec-bd55-11eb-87e3-482ae345b8cc",
+                    "eui": "d0c0n002",
+                    "blksz": 4096,
+                    "num_session": 64,
+                    "active_paths_per_grp": 1,
+                    "path_en_no_wait": 0,
+                    "paths": [
+                        {
+                            "path": "path0",
+                            "key_start": 300,
+                            "gid_start": 0,
+                            "count": 2,
+                            "qid": 0
+                        },
+                        {
+                            "path": "path1",
+                            "key_start": 400,
+                            "gid_start": 15,
+                            "count": 2,
+                            "qid": 0
+                        }
+                    ]
+                },
+                {
+                    "name" : "ctrlr0_ns3",
+                    "key": 1100003,
+                    "tgt_nsid": 1,
+                    "size_gb": 3,
+                    "guid": "2665597e-bd56-11eb-a714-482ae345b8cc",
+                    "eui": "d0c0n003",
+                    "blksz": 4096,
+                    "num_session": 64,
+                    "active_paths_per_grp": 1,
+                    "path_en_no_wait": 0,
+                    "paths": [
+                        {
+                            "path": "path0",
+                            "key_start": 500,
+                            "gid_start": 0,
+                            "count": 2,
+                            "qid": 0
+                        },
+                        {
+                            "path": "path1",
+                            "key_start": 600,
+                            "gid_start": 15,
+                            "count": 2,
+                            "qid": 0
+                        }
+                    ]
+                },
+                {
+                    "name" : "ctrlr0_ns4",
+                    "key": 1100004,
+                    "tgt_nsid": 1,
+                    "size_gb": 4,
+                    "guid": "41f0d826-bd56-11eb-a951-482ae345b8cc",
+                    "eui": "d0c0n004",
+                    "blksz": 4096,
+                    "num_session": 64,
+                    "active_paths_per_grp": 1,
+                    "path_en_no_wait": 0,
+                    "paths": [
+                        {
+                            "path": "path0",
+                            "key_start": 700,
+                            "gid_start": 0,
+                            "count": 2,
+                            "qid": 0
+                        },
+                        {
+                            "path": "path1",
+                            "key_start": 800,
+                            "gid_start": 15,
+                            "count": 2,
+                            "qid": 0
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

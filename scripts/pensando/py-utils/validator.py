@@ -67,7 +67,7 @@ class FieldString(Field):
             logging.error("Object %s, field %s, path %s, spec-field %s type STR", rootObj, self.name, self.structNodeInCfg, self.structNodeInSpec)
             logging.error("Expected (and expected as byte-array)")
             logging.error(CfgStore.getConfigDeep(fullPathAsList))
-            logging.error(cfgValue)
+            logging.error(cfgValueAsAscii)
             logging.error("Got (raw, comparison-range)")
             logging.error(specValue)
             logging.error(shortenedCompvalue)
@@ -92,7 +92,10 @@ class FieldInt(Field):
             logging.warning(CfgStore.getAllConfig())
             return
 
-        cfgAsInt = int(cfgValue, 0)
+        if isinstance(cfgValue, int):
+            cfgAsInt = cfgValue
+        else:
+            cfgAsInt = int(cfgValue, 0)
 
         if cfgAsInt != specValue:
             logging.error("Object %s, field %s, path %s, spec-field %s type INT", rootObj, self.name, self.structNodeInCfg, self.structNodeInSpec)
@@ -135,28 +138,34 @@ class FieldBytes(Field):
             assert False
 
 class StructValidator:
-    def __init__(self, fieldList, specStructName):
+    def __init__(self, fieldList, specStructName, friendlyName):
         self.allFields = fieldList
         self.specStruct = specStructName
+        self.friendlyName = friendlyName
 
     def compare(self, rootObj, compareWithRawBuf):
         structDict = Parser.struct_parse_as_dict(compareWithRawBuf[0:Parser.struct_size(self.specStruct)], self.specStruct)
 
-        logging.debug("%s validator with field list [%s]", self.specStruct, self.allFields)
+        logging.debug("%s (%s) validator with field list [%s], treating buffer as %s",
+            self.friendlyName, rootObj, self.allFields, self.specStruct)
+
+        # logging.debug("Config Store is:")
+        # logging.debug(CfgStore.getAllConfig())
 
         for field in self.allFields:
             field.compare(rootObj, structDict)
+            logging.debug("!!! %s.%s matched !!!", self.friendlyName, field.name)
 
     def addFieldForComparison(self, newField):
         self.allFields.append(newField)
 
 # instantiate controllers
 gControllerValidator = StructValidator([
-    FieldInt("Vendor Id", "vid", "vid"),
-    FieldString("Serial Number", "serial", "sn"),
-    FieldInt("Version", "version", "ver.raw"),
-    FieldBytes("IEEE OUI Id", "ieee", "ieee")
-], "spdk_nvme_ctrlr_data")
+    FieldString("Serial Number", "serial_no", "sn"),
+    FieldString("NQN", "nqn", "subnqn"),
+    FieldString("Model Number", "nqn", "subnqn"),
+    FieldInt("Namespace Count", "ns_count", "nn")
+], "spdk_nvme_ctrlr_data", "Identify Controller Response")
 
 # external API
 def controllerValidateResponse(rootObj, rawBuf):

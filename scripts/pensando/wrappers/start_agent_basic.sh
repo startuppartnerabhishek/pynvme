@@ -8,7 +8,11 @@ NSV_ROOT_DIR=$(jq -rj .global.nsv_test_root_path ${CONF_FILE})
 AGENT_EXEC_CMD="build/nvme_agent"
 AGENT_EXEC_ARGS="--run_dir run --config_dir run/conf"
 
-NSV_CFG_CMD="tools/nsv_scale_cfg.sh"
+AGENT_CONF_FILE="tools/nvme_testcfg.json"
+
+#NSV_CFG_CMD="tools/nsv_scale_cfg.sh"
+
+NSV_CFG_CMD="build/nsvcfg load --json ${AGENT_CONF_FILE}"
 
 # start the agent
 cd ${NSV_ROOT_DIR}

@@ -67,7 +67,7 @@ def pytest_addoption(parser):
         "--conf", action="store", default="conf/simconf.json", help="environment configuration"
     )
     parser.addoption(
-        "--agentconf", action="store", default="conf/agentconf.json", help="environment configuration"
+        "--agentconf", action="store", default="conf/sample_nvme_testcfg.json", help="environment configuration"
     )
 
 def pytest_configure(config):
@@ -106,8 +106,8 @@ def pytest_configure(config):
 
     globalBatchCtrl = B.BatchControl(sim_config)
 
-    CfgStore.refreshConfig(agentconf)
-    # CfgStore.refreshConfig("conf/agentconf.json;conf/partagentconf.json")
+    #CfgStore.refreshConfig(agentconf)
+    CfgStore.refreshConfig("conf/sample_nvme_testcfg.json")
 
     globalBatchCtrl.print()
 
