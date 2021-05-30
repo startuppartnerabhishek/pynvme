@@ -264,3 +264,67 @@ def test_batch_fence15(prevBatchInfo, currBatchInfo):
 def test_batch_fence16(prevBatchInfo, currBatchInfo):
     logging.info("test_batch_fence16 redirects to test_batch_fence")
     test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence17(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence17 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence18(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence18 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence19(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence19 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence20(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence20 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence21(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence21 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence22(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence22 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence23(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence23 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence24(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence24 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence25(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence25 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence26(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence26 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence27(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence27 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence28(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence28 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence29(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence29 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence30(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence30 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence31(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence31 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
+
+def test_batch_fence32(prevBatchInfo, currBatchInfo):
+    logging.info("test_batch_fence32 redirects to test_batch_fence")
+    test_batch_fence(prevBatchInfo, currBatchInfo)
