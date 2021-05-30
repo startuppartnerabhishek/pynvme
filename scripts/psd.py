@@ -414,10 +414,12 @@ def test_create_delete_iocq(nvme0):
 
 @pytest.mark.parametrize("pgsz", [1, 2, 3, 10, 256, 512, 1024])
 def test_create_delete_iocq_large(nvme0, pgsz):
+    logging.info("test_create_delete_iocq_large: on nvme0 with pgsz multiple %u", pgsz)
+    logging.debug(nvme0)
     buf_cq = PRP(4096*pgsz)
     cq = IOCQ(nvme0, 4, 5, buf_cq)
     cq.delete()
-
+    buf_cq.delete()
 
 def test_create_delete_iocq_non_contig(nvme0):
     prp_list = PRPList()

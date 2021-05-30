@@ -152,6 +152,8 @@ static int sim_sync_namespace(ctrlr_t *ctrlr, unsigned int ns_array_idx)
     // wait for the response so that the caller can treat us as synchronous
     wait_for_all_adminq_completions(ctrlr);
 
+    buffer_fini(ctrlr, buf);
+
     return DRVSIM_RETCODE_SUCCESS;
 }
 
@@ -251,8 +253,10 @@ sim_cmd_log_entry_t *sim_add_cmd_log_entry(
     e->response_buf_len = len;
     e->free_buf_on_completion = free_buf_on_completion_processing;
 
-    DRVSIM_LOG("For qp %p, adding cmd entry for opc %u, cid 0x%x - expect callback to fn %p with ctx %p\n",
-                    qpair, e->cmd.opc, e->cmd.cid, cb_fn, e);    
+    DRVSIM_LOG("For qp %p, adding cmd entry for opc %u, cid 0x%x - expect callback to (ORIGINAL fn %p with ctx %p) -> "
+    "(FRAMEWORK fn %p ctx %p), auto-free buf on completion %u\n",
+                    qpair, e->cmd.opc, e->cmd.cid, cb_fn, cb_arg,
+                    drvsim_completion_callback, e, free_buf_on_completion_processing);
 
     pthread_mutex_lock(&qpair->parent_controller->lock);
 
