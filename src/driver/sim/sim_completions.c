@@ -56,6 +56,12 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
 
             case SPDK_NVME_OPC_SET_FEATURES:
                 DRVSIM_NOT_IMPLEMENTED_BENIGN("SET Features completion - processing not implemented\n");
+                log_ctrlr_completion(cmd_log->qpair, cmd_log, true);
+                break;
+
+            case SPDK_NVME_OPC_GET_FEATURES:
+                DRVSIM_NOT_IMPLEMENTED_BENIGN("GET Features completion - processing not implemented\n");
+                log_ctrlr_completion(cmd_log->qpair, cmd_log, true);
                 break;
 
             case SPDK_NVME_OPC_GET_LOG_PAGE:

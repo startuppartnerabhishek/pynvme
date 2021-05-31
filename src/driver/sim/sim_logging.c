@@ -139,9 +139,23 @@ void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry)
     DRVSIM_LOG("ctrlr %p - Command on %s qp %p\n",
         qp->parent_controller, is_adminq ? "ADMIN" : "IO", qp);
 
-    DRVSIM_LOG("Command opc %s (%u), fuse %u, cid 0x%x, nsid 0x%x, cdw10 0x%x\n",
+    DRVSIM_LOG("Command opc %s (%u), fuse %u, cid 0x%x, nsid 0x%x\n",
         cmd_name_as_string, cmd_log_entry->cmd.opc,
-        cmd_log_entry->cmd.fuse, cmd_log_entry->cmd.cid, cmd_log_entry->cmd.nsid, cmd_log_entry->cmd.cdw10);
+        cmd_log_entry->cmd.fuse, cmd_log_entry->cmd.cid, cmd_log_entry->cmd.nsid);
+
+    DRVSIM_LOG("Command Words:\n"
+        "\tcdw10 = 0x%08x\n"
+        "\tcdw11 = 0x%08x\n"
+        "\tcdw12 = 0x%08x\n"
+        "\tcdw13 = 0x%08x\n"
+        "\tcdw14 = 0x%08x\n"
+        "\tcdw15 = 0x%08x\n",
+    cmd_log_entry->cmd.cdw10,
+    cmd_log_entry->cmd.cdw11,
+    cmd_log_entry->cmd.cdw12,
+    cmd_log_entry->cmd.cdw13,
+    cmd_log_entry->cmd.cdw14,
+    cmd_log_entry->cmd.cdw15);
 
     sim_hex_dump(&cmd_log_entry->cmd, sizeof(cmd_log_entry->cmd), NULL);
  
@@ -166,7 +180,7 @@ void log_ctrlr_completion(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry, bool 
         cmd_log_entry->cpl.status.sc, cmd_log_entry->cpl.status.p, cmd_log_entry->cpl.status.sct,
         cmd_log_entry->cpl.status.m, cmd_log_entry->cpl.status.dnr);
 
-    DRVSIM_LOG("|||| cdw0 0x%x, sq-head %u, sq-id %u, cid 0x%x\n",
+    DRVSIM_LOG("|||| cdw0 0x%08x, sq-head %u, sq-id %u, cid 0x%x\n",
         cmd_log_entry->cpl.cdw0, cmd_log_entry->cpl.sqhd,
         cmd_log_entry->cpl.sqid, cmd_log_entry->cpl.cid);
 
