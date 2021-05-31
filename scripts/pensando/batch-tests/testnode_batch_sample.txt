@@ -13,5 +13,7 @@ driver_test.py::test_admin_generic_cmd
 scripts/pensando/tests/connectivity_test.py::test_batch_fence6
 scripts/psd.py::test_create_delete_iocq
 scripts/pensando/tests/connectivity_test.py::test_batch_fence7
+scripts/psd.py::test_create_delete_iosq
+scripts/pensando/tests/connectivity_test.py::test_batch_fence8
 scripts/psd.py::test_create_delete_iocq_large
 scripts/pensando/tests/connectivity_test.py::test_batch_final_cleanup

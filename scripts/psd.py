@@ -416,7 +416,7 @@ def test_create_delete_iocq(nvme0):
 def test_create_delete_iocq_large(nvme0, pgsz):
     logging.info("test_create_delete_iocq_large: on nvme0 with pgsz multiple %u", pgsz)
     logging.debug(nvme0)
-    buf_cq = PRP(4096*pgsz)
+    buf_cq = PRP(nvme0, (4096*pgsz))
     cq = IOCQ(nvme0, 4, 5, buf_cq)
     cq.delete()
     buf_cq.delete()
@@ -431,10 +431,10 @@ def test_create_delete_iocq_non_contig(nvme0):
 
 
 def test_create_delete_iosq(nvme0):
-    buf_cq = PRP(4096)
+    buf_cq = PRP(nvme0, 4096)
     cq = IOCQ(nvme0, 4, 5, buf_cq)
 
-    buf_sq = PRP(4096)
+    buf_sq = PRP(nvme0, 4096)
 
     # Completion Queue Invalid
     with pytest.warns(UserWarning, match="ERROR status: 01/00"):
