@@ -763,7 +763,7 @@ int nvme_get_reg32(ctrlr_t* ctrlr,
     if (0 == ret) {
         if (g_sim_config.log_register_reads) {
             DRVSIM_LOG("Register Read (32): ctrlr %p, offset 0x%x\n", ctrlr, offset);
-            sim_hex_dump(&value, sizeof(unsigned int));
+            sim_hex_dump(&value, sizeof(unsigned int), NULL);
         }
     } else {
         DRVSIM_LOG_TO_FILE(stderr, "Register Read (32) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
@@ -798,7 +798,7 @@ int nvme_get_reg64(ctrlr_t* ctrlr,
     if (0 == ret) {
         if (g_sim_config.log_register_reads) {
             DRVSIM_LOG("Register Read (64): ctrlr %p, offset 0x%x\n", ctrlr, offset);
-            sim_hex_dump(&value, sizeof(unsigned long));
+            sim_hex_dump(&value, sizeof(unsigned long), NULL);
         }
     } else {
         DRVSIM_LOG_TO_FILE(stderr, "Register Read (64) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
@@ -833,7 +833,7 @@ int nvme_set_reg32(ctrlr_t* ctrlr,
     if (0 == ret) {
         if (g_sim_config.log_register_writes) {
             DRVSIM_LOG("Register Write (32): ctrlr %p, offset 0x%x\n", ctrlr, offset);
-            sim_hex_dump(&value, sizeof(unsigned int));
+            sim_hex_dump(&value, sizeof(unsigned int), NULL);
         }
     } else {
         DRVSIM_LOG_TO_FILE(stderr, "Register Write (32) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
@@ -868,7 +868,7 @@ int nvme_set_reg64(ctrlr_t* ctrlr,
     if (0 == ret) {
         if (g_sim_config.log_register_writes) {
             DRVSIM_LOG("Register Write (64): ctrlr %p, offset 0x%x\n", ctrlr, offset);
-            sim_hex_dump(&value, sizeof(unsigned long));
+            sim_hex_dump(&value, sizeof(unsigned long), NULL);
         }
     } else {
         DRVSIM_LOG_TO_FILE(stderr, "Register Write (64) FAILED: ctrlr %p, offset 0x%x, ret-code %d", ctrlr, offset, ret);
@@ -1042,7 +1042,7 @@ void *buffer_init(ctrlr_t *ctrlr, size_t bytes, uint64_t *phys_addr,
 
     buffer_pattern_init(buf, bytes, ptype, pvalue);
 
-    // sim_hex_dump(buf, bytes);
+    // sim_hex_dump(buf, bytes, NULL);
 
     return buf;
 }

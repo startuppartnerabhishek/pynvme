@@ -19,14 +19,15 @@ static void sim_process_completion(struct sim_cmd_log_entry_s *cmd_log)
 
     if (g_sim_config.log_dump_adminq_completion_bytes) {
         DRVSIM_LOG("%s commmand:\n", q_type);
-        sim_hex_dump(&cmd_log->cmd, sizeof(cmd_log->cmd));
+        sim_hex_dump(&cmd_log->cmd, sizeof(cmd_log->cmd), NULL);
         DRVSIM_LOG("completion:\n");
-        sim_hex_dump(&cmd_log->cpl, sizeof(cmd_log->cpl));
+        sim_hex_dump(&cmd_log->cpl, sizeof(cmd_log->cpl), NULL);
         DRVSIM_LOG("response buffer %p, len %lu:\n", cmd_log->response_buf, cmd_log->response_buf_len);
         if (cmd_log->response_buf && cmd_log->response_buf_len) {
             sim_hex_dump(cmd_log->response_buf,
                 cmd_log->response_buf_len > g_sim_config.log_dump_adminq_completion_bytes ?
-                    g_sim_config.log_dump_adminq_completion_bytes : cmd_log->response_buf_len);
+                    g_sim_config.log_dump_adminq_completion_bytes : cmd_log->response_buf_len,
+                    NULL);
         }
     }
 
