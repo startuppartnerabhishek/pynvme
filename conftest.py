@@ -193,7 +193,7 @@ def tcg(nvme0):
     ret.close()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def buf(nvme0):
     ret = d.Buffer(nvme0, 4096, "pynvme buffer")
     yield ret

@@ -17,5 +17,7 @@ scripts/psd.py::test_create_delete_iosq
 scripts/pensando/tests/connectivity_test.py::test_batch_fence8
 scripts/test_examples.py::test_registers_and_identify_data
 scripts/pensando/tests/connectivity_test.py::test_batch_fence9
+scripts/test_examples.py::test_getlogpage_nsid
+scripts/pensando/tests/connectivity_test.py::test_batch_fence10
 scripts/psd.py::test_create_delete_iocq_large
 scripts/pensando/tests/connectivity_test.py::test_batch_final_cleanup
