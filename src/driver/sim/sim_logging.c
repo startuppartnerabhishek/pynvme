@@ -19,7 +19,7 @@
 #define LOG_FIELD_HEX(__STRUCTPTR__, __FIELDNAME__, __CUSTOM_NAME__)                                                    \
 do {                                                                                                                    \
     DRVSIM_LOG_UNDECORATED_TO_FILE(stdout, ">> %s >>>>>>>>>>\n", __CUSTOM_NAME__ ? __CUSTOM_NAME__ : #__FIELDNAME__);   \
-    sim_hex_dump(&((__STRUCTPTR__)->__FIELDNAME__), sizeof((__STRUCTPTR__)->__FIELDNAME__));                            \
+    sim_hex_dump(&((__STRUCTPTR__)->__FIELDNAME__), sizeof((__STRUCTPTR__)->__FIELDNAME__), stdout);                            \
 } while (0)
 
 ////module: log
@@ -27,8 +27,47 @@ do {                                                                            
 
 char *log_buf_dump(const char* header, const void* buf, size_t len, size_t base)
 {
-  DRVSIM_NOT_IMPLEMENTED("not implemented\n");
-  return NULL;
+  size_t size;
+  FILE* fd = NULL;
+  char* tmpname = "/tmp/pynvme_buf_dump.tmp";
+  static char dump_buf[64*1024];
+
+  // dump buf is limited
+  assert(len <= 4096);
+
+  errno = 0;
+  fd = fopen(tmpname, "w+");
+
+  if (fd == NULL)
+  {
+    DRVSIM_LOG_TO_FILE(stderr, "ERROR fopen: %s\n", strerror(errno));
+    return NULL;
+  }
+
+  fprintf(fd, "%s: -----\n", header);
+  sim_hex_dump(buf+base, len, fd);
+
+  // get file size
+  size = ftell(fd);
+
+  errno = 0;
+  if (-1 == fseek(fd, 0, SEEK_SET))
+  {
+    DRVSIM_LOG_TO_FILE(stderr, "ERROR lseek: %s\n", strerror(errno));
+    return NULL;
+  }
+
+  // read the data from temporary file
+  errno=0;
+  if (fread(dump_buf, size, 1, fd) == 0)
+  {
+    DRVSIM_LOG_TO_FILE(stderr, "ERROR read: %s\n", strerror(errno));
+    return NULL;
+  }
+
+  fclose(fd);
+  dump_buf[size] = '\0';
+  return dump_buf;
 }
 
 void log_dump_single_command(sim_cmd_log_entry_t *cmd_log)
@@ -104,7 +143,7 @@ void log_ctrlr_cmd(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry)
         cmd_name_as_string, cmd_log_entry->cmd.opc,
         cmd_log_entry->cmd.fuse, cmd_log_entry->cmd.cid, cmd_log_entry->cmd.nsid, cmd_log_entry->cmd.cdw10);
 
-    sim_hex_dump(&cmd_log_entry->cmd, sizeof(cmd_log_entry->cmd));
+    sim_hex_dump(&cmd_log_entry->cmd, sizeof(cmd_log_entry->cmd), NULL);
  
     return;
 }
@@ -131,7 +170,7 @@ void log_ctrlr_completion(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry, bool 
         cmd_log_entry->cpl.cdw0, cmd_log_entry->cpl.sqhd,
         cmd_log_entry->cpl.sqid, cmd_log_entry->cpl.cid);
 
-    sim_hex_dump(&cmd_log_entry->cpl, sizeof(cmd_log_entry->cpl));
+    sim_hex_dump(&cmd_log_entry->cpl, sizeof(cmd_log_entry->cpl), NULL);
 
     return;
 }

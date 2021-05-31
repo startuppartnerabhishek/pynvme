@@ -49,7 +49,7 @@ do {                                                    \
 } while (0)
 
 
-void sim_hex_dump(const void* data, size_t size);
+void sim_hex_dump(const void* data, size_t size, FILE *out_fp);
 
 /************************ </end> asserting and printing low level *****************************/
 

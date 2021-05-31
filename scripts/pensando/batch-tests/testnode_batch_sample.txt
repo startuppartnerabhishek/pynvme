@@ -21,5 +21,7 @@ scripts/test_examples.py::test_getlogpage_nsid
 scripts/pensando/tests/connectivity_test.py::test_batch_fence10
 driver_test.py::test_create_device
 scripts/pensando/tests/connectivity_test.py::test_batch_fence11
+driver_test.py::test_getlogpage_send_cm
+scripts/pensando/tests/connectivity_test.py::test_batch_fence12
 scripts/psd.py::test_create_delete_iocq_large
 scripts/pensando/tests/connectivity_test.py::test_batch_final_cleanup
