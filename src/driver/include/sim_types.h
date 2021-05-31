@@ -22,6 +22,7 @@ typedef struct sim_config_s {
     unsigned int    log_buf_alloc_free;
     unsigned int    log_dump_adminq_completion_bytes;
     unsigned int    max_log_entries_per_qpair;
+    char            temp_bufdump_file[SIM_MAX_STRING_LEN];
 } sim_config_t;
 
 extern sim_config_t g_sim_config;
