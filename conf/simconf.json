@@ -6,7 +6,8 @@
         "log_register_writes": 0,
         "log_buf_alloc_free": 1,
         "max_log_entries_per_qpair": 128,
-        "log_dump_adminq_completion_bytes": 256
+        "log_dump_adminq_completion_bytes": 256,
+        "temp_bufdump_file": "/tmp/pynvme_buf_dump.tmp"
     },
 
     "nvme0": {

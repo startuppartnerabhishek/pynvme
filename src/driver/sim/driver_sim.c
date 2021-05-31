@@ -1145,6 +1145,7 @@ static void init_sim_config(char *json_string)
 {
     const sim_config_item_t sim_global_cfg_file_items[] = {
         CONF_FILE_PARSE_ENTRY((&g_sim_config), agent_runtime_rootpath, true),
+        CONF_FILE_PARSE_ENTRY((&g_sim_config), temp_bufdump_file, true),
         CONF_FILE_PARSE_ENTRY((&g_sim_config), log_register_reads, false),
         CONF_FILE_PARSE_ENTRY((&g_sim_config), log_register_writes, false),
         CONF_FILE_PARSE_ENTRY((&g_sim_config), log_buf_alloc_free, false),

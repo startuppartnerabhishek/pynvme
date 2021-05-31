@@ -29,7 +29,7 @@ char *log_buf_dump(const char* header, const void* buf, size_t len, size_t base)
 {
   size_t size;
   FILE* fd = NULL;
-  char* tmpname = "/tmp/pynvme_buf_dump.tmp";
+  char* tmpname = &g_sim_config.temp_bufdump_file[0];
   static char dump_buf[64*1024];
 
   // dump buf is limited
