@@ -66,7 +66,7 @@ class BatchControl():
             logging.info("No explicit mapping, using default %u", int(self.__defaultConfigIdx))
             config = self.__configs[int(self.__defaultConfigIdx)]
         else:
-            logging.info("Found explicit mapping, using default %u", int(self.__batchToConfigIdMap[batchName]))
+            logging.info("Found explicit mapping, using batch %u", int(self.__batchToConfigIdMap[batchName]))
             config = self.__configs[int(self.__batchToConfigIdMap[batchName])]
 
         if (bAdvance):
