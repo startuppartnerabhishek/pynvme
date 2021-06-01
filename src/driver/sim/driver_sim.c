@@ -178,7 +178,8 @@ int nvme_set_ns(ctrlr_t *ctrlr)
         } else {
             success++;
             DRVSIM_ASSERT((ctrlr->namespaces[i].state == SIM_NS_STATE_IDENTIFY_COMPLETE),
-                            "namespace %u, state %u is not IDENTIFIED\n", i, ctrlr->namespaces[i].state);
+                            "namespace index %u (ns-id %u), state %u is not IDENTIFIED\n",
+                            i, i+1, ctrlr->namespaces[i].state);
         }
     }
 
