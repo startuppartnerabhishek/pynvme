@@ -74,7 +74,8 @@ make                                         # compile pynvme
 mkdir logs
 
 # quick test after compile
-make setup
-make test TESTS=scripts/test_examples.py::test_hello_world
+#make setup
+#make test TESTS=scripts/test_examples.py::test_hello_world
+echo Skipped sanity test because of non-trivial differences between SIM and ASIC environments
 
 echo "pynvme install done."
