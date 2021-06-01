@@ -90,7 +90,9 @@ conf - contains runtime configuration files. simconf.json is used by default to 
 
 logs - by default (possible to override with conf file, the default conf-file being conf/simcnof.json) the logs go here
 
-scripts ---> contains python test scripts, pensando extensions to python framework, and wrapper scripts for testing
+scripts ---> contains python test scripts, pensando extensions to python framework, and wrapper scripts for testing.
+             See scripts/pensando/tests/connectivity_tests.py (test function test_nvme_identify_controller) for an example
+             of parsing responses, and validating Command Responses against expected values.
 
 ├── ftl
 ├── pensando
@@ -171,3 +173,5 @@ The SIM mode library nvme_sim.so communicates with the NVME-SDK, which in turns 
           V                                                          V
 
        NVME - Agent                                               Device
+
+
