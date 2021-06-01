@@ -122,7 +122,7 @@ The SIM mode library nvme_sim.so communicates with the NVME-SDK, which in turns 
 
                                 ____________________
                                |                    |
-                               |  Pytest Framework  | ---> conftest.py
+                               |  Pytest Framework  | ---> conftest.py, pytest.ini
                                |____________________|
                     
                                 ____________________
