@@ -11,7 +11,7 @@
 (3) Installation:
     PYNVME_ROOT_DIR$ ./install.sh
 
-    Installation setups up SPDK and other dependencies to create a working build-and-run environment.
+    Installation sets up SPDK and other dependencies to create a working build-and-run environment.
 
 ===================================
 
@@ -24,6 +24,11 @@
 ===================================
 
 (5) Running:
+
+   Note that an LD_LIBRARY_PATH export may be needed to ensure that NSV-TEST libraries can be located at runtime.
+
+   E.g.
+   export LD_LIBRARY_PATH=${AGENT_LIB_PATH}
 
     (a) PCIE mode (stock)
         No intentional changes were made to this environment, and so it is expected that procedures documented
