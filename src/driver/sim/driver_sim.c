@@ -612,7 +612,7 @@ int nvme_set_adminq(ctrlr_t *ctrlr)
         "api handle %p should not be NULL, and adminq %p should be NULL!\n",
         ctrlr->ctrlr_api_handle, ctrlr->adminq);
     
-    // admin qpair reset is TODO, it is their in pynvme driver.c 
+    // admin qpair reset is TODO, it is there in pynvme driver.c 
     ret = enable_driver(ctrlr->ctrlr_api_handle);
 
     qpair_t *adminq = sim_allocate_qpair(ctrlr, true);
@@ -971,13 +971,20 @@ ctrlr_t* nvme_init(char * traddr, unsigned int port)
 
 static void free_controller(ctrlr_t *ctrlr)
 {
-    pthread_mutex_destroy(&ctrlr->lock);
+    DRVSIM_LOG("Entered with ctrlr %p\n", ctrlr);
+
+    log_controller(ctrlr);
 
     if (ctrlr->num_namespaces > 0) {
+        DRVSIM_LOG("Freeing namespaces\n");
         free(ctrlr->namespaces);
     }
 
+    DRVSIM_LOG("Freeing SDK API handle %p\n", ctrlr->ctrlr_api_handle);
     deallocate_driver(ctrlr->ctrlr_api_handle);
+
+    DRVSIM_LOG("Freeing other controller resources\n");
+    pthread_mutex_destroy(&ctrlr->lock);
 
     free(ctrlr);
 
@@ -988,6 +995,8 @@ static void free_controller(ctrlr_t *ctrlr)
 
 int nvme_fini(ctrlr_t* ctrlr)
 {
+    DRVSIM_LOG("Entered with ctrlr %p\n", ctrlr);
+
     DRVSIM_ASSERT((ctrlr && ctrlr->ctrlr_api_handle), "invalid ctrlr %p or uninitialized api handle\n", ctrlr);
 
 #if 0

@@ -34,6 +34,7 @@ void log_ctrlr_completion(qpair_t *qp, sim_cmd_log_entry_t *cmd_log_entry, bool 
 void log_ctrlr_completion_buf_id_controller(sim_cmd_log_entry_t *cmd_log_entry);
 void log_ctrlr_completion_buf_id_namespace(sim_cmd_log_entry_t *cmd_log_entry);
 void log_ctrlr_completion_get_log_page(sim_cmd_log_entry_t *cmd_log_entry);
+void log_controller(ctrlr_t *ctrlr);
 
 void sim_sleep(unsigned int seconds, unsigned int nanoseconds);
 

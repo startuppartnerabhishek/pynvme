@@ -70,6 +70,20 @@ char *log_buf_dump(const char* header, const void* buf, size_t len, size_t base)
   return dump_buf;
 }
 
+void log_controller(ctrlr_t *ctrlr)
+{
+    DRVSIM_LOG("ctrlr %p\n", ctrlr);
+    DRVSIM_LOG("api handle %p, adminq %p, other-queues list %p, num namespaces %u, "
+        "namespace array %p, num-alloc-bufs %u, num-freed-bufs %u, "
+        "dev %u, vf 0x%x, sq-size %u, cq-size %u, nr_cmds %u\n",
+        ctrlr->ctrlr_api_handle, ctrlr->adminq, ctrlr->other_queues_list,
+        ctrlr->num_namespaces, ctrlr->namespaces,
+        ctrlr->num_allocated_buffers, ctrlr->num_freed_buffers,
+        ctrlr->dev_no, ctrlr->vf_no, ctrlr->sq_size, ctrlr->cq_size, ctrlr->nr_cmds);
+
+    return;
+}
+
 void log_dump_single_command(sim_cmd_log_entry_t *cmd_log)
 {
     DRVSIM_LOG("\n>>>> Log Entry %p, prev %p, next %p, is_completed %u, is_processed %u, "

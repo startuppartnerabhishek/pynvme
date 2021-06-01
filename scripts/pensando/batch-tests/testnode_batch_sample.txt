@@ -25,7 +25,7 @@ driver_test.py::test_get_pcie_registers
 scripts/pensando/tests/connectivity_test.py::test_batch_fence14
 driver_test.py::test_set_get_features
 scripts/pensando/tests/connectivity_test.py::test_batch_fence9
-scripts/test_examples.py::test_getlogpage_nsid
+scripts/test_examples.py::test_getlogpage_nsid_sim_workaround
 scripts/pensando/tests/connectivity_test.py::test_batch_fence15
-scripts/psd.py::test_create_delete_iocq_large
+scripts/psd.py::test_create_delete_iocq_large_sim_workaround
 scripts/pensando/tests/connectivity_test.py::test_batch_final_cleanup

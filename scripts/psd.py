@@ -421,6 +421,11 @@ def test_create_delete_iocq_large(nvme0, pgsz):
     cq.delete()
     buf_cq.delete()
 
+@pytest.mark.parametrize("pgsz", [1, 2, 3])
+def test_create_delete_iocq_large_sim_workaround(defaultFence, nvme0, pgsz):
+    logging.info("test_create_delete_iocq_large_sim_workaround [pgsz-multiple %u]: redirecting to --> test_create_delete_iocq_large", pgsz)
+    test_create_delete_iocq_large(nvme0, pgsz)
+
 def test_create_delete_iocq_non_contig(nvme0):
     prp_list = PRPList()
     prp_list[0] = PRP()
