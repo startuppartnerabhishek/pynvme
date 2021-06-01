@@ -109,8 +109,8 @@ src -----> contains pynvme spdk extension for PCIE mode, and connecting logic wi
 
 For a design overview, see: https://docs.google.com/document/d/1WN6auMxVJ3kNI2fwQqmHaMY_bzhQwfvo_aAOjTYadvE/edit?usp=sharing
 
-The python layers use a .so file (nvme.so or nvme_sim.so, depending on PCIE/SIM modes respectively) to load a library
-with the correct communication to the NVME-SPDK driver or NVME-SDK, as needed.
+The python layers use a .so file (nvme.so or nvme_sim.so), loaded as a python module. The .so library implements the cython
+interface to correctly communicate with a Pensando NVME Agent, or a PCIE device, depending on the test mode (PCIE/SIM).
 
 nvme.so = driver/common + driver/cython + driver/spdk-extensions + statically linked SPDK
 nvme_sim.so = driver/common + driver/cython + driver/sim + statically linked NVME-SDK (Pensando)
@@ -118,3 +118,45 @@ nvme_sim.so = driver/common + driver/cython + driver/sim + statically linked NVM
 Both these libraries have a lot of common symbol-names, but they behave differently as they have different underlying layers.
 The PCIE mode library nvme.so controls and directly drives a PCIE device.
 The SIM mode library nvme_sim.so communicates with the NVME-SDK, which in turns talks to an Agent over shared-mem interfaces.
+
+
+                                ____________________
+                               |                    |
+                               |  Pytest Framework  | ---> conftest.py
+                               |____________________|
+                    
+                                ____________________
+                               |                    |
+                               |  Python Test Logic | -------------> your test logic goes here
+                               |____________________|
+             
+                                ____________________
+                               |                    |
+                               |      Cython        | ------> src/driver/cython
+                               |____________________|
+             
+
+    nvme_sim.so (mode="SIM")                              nvme.so (mode = "PCIE")
+    ____________________                               _____________________________
+   |                    |                              |                            |
+   | SIM glue=          |                              | pyNVME SPDK extensions =   | 
+   | src/driver/sim     |                              |                            |
+   |____________________|                              | src/driver/spdk-extensions |
+                                                       |____________________________|
+
+    _______________________
+   |                       |                           _____________________________
+   | NVME-Test SDK =       |                           |                            |
+   | libpdsnvmedriver.so   |                           |      SPDK <---> DPDK       |
+   | libpdsnvmepci.so      |                           |                            |
+   |_______________________|                           |____________________________|
+             
+
+------ Shared Mem ------------                         ------------ PCIE ----------
+
+          ^                                                          ^
+          |                                                          |
+          |                                                          |
+          V                                                          V
+
+       NVME - Agent                                               Device
