@@ -419,7 +419,7 @@ def test_create_delete_iocq_large(nvme0, pgsz):
     buf_cq = PRP(nvme0, (4096*pgsz))
     cq = IOCQ(nvme0, 4, 5, buf_cq)
     cq.delete()
-    buf_cq.delete()
+    del buf_cq
 
 @pytest.mark.parametrize("pgsz", [1, 2, 3])
 def test_create_delete_iocq_large_sim_workaround(defaultFence, nvme0, pgsz):
