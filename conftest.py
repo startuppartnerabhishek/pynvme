@@ -48,6 +48,7 @@ sys.path.append(additional_py_modules_path)
 
 import batch as B
 import configStore as CfgStore
+import fence as F
 
 # defer this binding
 # import nvme as d
@@ -250,3 +251,13 @@ def testInitialSetup():
     ret = globalBatchCtrl.getInitialSetup()
 
     yield ret
+
+# must be the first fixture to have an effect before other fixtures are evaluated
+@pytest.fixture(scope="function")
+def defaultFence():
+    defaultBatchCfg = globalBatchCtrl.getDefaultBatch()
+
+    F.apply_batch_fence(defaultBatchCfg, defaultBatchCfg)
+
+    # yield is a don't care for this fixture - it is a pretest action
+    yield defaultBatchCfg

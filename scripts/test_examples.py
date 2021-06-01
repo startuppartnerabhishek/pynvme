@@ -36,9 +36,9 @@
 import time
 import pytest
 import logging
+import sys
 
 from conftest import globalNvmeModule as d
-
 
 # intuitive, spec, qpair, vscode, debug, cmdlog, assert
 def test_hello_world(nvme0, nvme0n1, qpair):
@@ -818,10 +818,14 @@ def test_power_state_transition(pcie, nvme0, nvme0n1, qpair, buf, ps):
 
 @pytest.mark.parametrize("nsid", [0, 1, 0xffffffff])
 def test_getlogpage_nsid(nvme0, buf, nsid):
-    logging.info("model name: %s, nsid %d" % (nvme0.id_data(63, 24, str), nsid))
+    logging.info("model name: %s, nsid 0x%x" % (nvme0.id_data(63, 24, str), nsid))
     nvme0.getlogpage(0xCA, buf, 512, nsid=nsid).waitdone()
     nvme0.getlogpage(0x02, buf, 512, nsid=nsid).waitdone()
 
+@pytest.mark.parametrize("nsid", [0, 1, 0xffffffff])
+def test_getlogpage_nsid_sim_workaround(defaultFence, nvme0, buf, nsid):
+    logging.info("test_getlogpage_nsid_sim_workaround --> redirecting to test_getlogpage_nsid")
+    test_getlogpage_nsid(nvme0, buf, nsid)
 
 def test_ioworker_with_temperature(nvme0, nvme0n1, buf):
     with nvme0n1.ioworker(io_size=256,

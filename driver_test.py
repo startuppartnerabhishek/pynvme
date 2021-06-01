@@ -838,8 +838,7 @@ def test_get_pcie_config_class_code(pcie):
 def test_get_pcie_registers(pcie):
     vid = pcie.register(0, 2)
     did = pcie.register(2, 2)
-    logging.info("vid %x, did %x" % (vid, did))
-
+    logging.info("test_get_pcie_registers: Test Completed ---> vid %x, did %x" % (vid, did))
 
 def test_pcie_capability_d3hot(pcie, nvme0n1):
     assert None == pcie.cap_offset(2)

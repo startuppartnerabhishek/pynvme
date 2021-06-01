@@ -64,7 +64,7 @@ class BatchControl():
 
         if batchName not in self.__batchToConfigIdMap:
             logging.info("No explicit mapping, using default %u", int(self.__defaultConfigIdx))
-            config = self.__configs[int(self.__defaultConfigIdx)]
+            config = self.getDefaultBatch()
         else:
             logging.info("Found explicit mapping, using batch %u", int(self.__batchToConfigIdMap[batchName]))
             config = self.__configs[int(self.__batchToConfigIdMap[batchName])]
@@ -83,3 +83,6 @@ class BatchControl():
 
     def getInitialSetup(self):
         return self.__initialSetup
+
+    def getDefaultBatch(self):
+        return (self.__configs[int(self.__defaultConfigIdx)])

@@ -606,7 +606,7 @@ cdef class Pcie(object):
     def close(self):
         """close to explictly release its resources instead of del"""
 
-        print("dealloc pcie: %x" % <unsigned long>self._ctrlr); sys.stdout.flush()
+        print("cython-Pcie.close() - dealloc pcie: %x" % <unsigned long>self._ctrlr); sys.stdout.flush()
         if self._ctrlr is not NULL and self._backup is not True:
             ret = d.nvme_fini(self._ctrlr)
             if ret != 0:

@@ -92,7 +92,7 @@ def refreshConfig(config_files):
             # print(__gCurrentConfig)
 
     logging.info("Refreshed with Config from file(s) %s, %u controllers", cfg_file_list, controllerCount)
-    logging.info(__gCurrentConfig)
+    logging.debug(__gCurrentConfig)
 
 def getConfigDeep(node_path_list):
     global __gCurrentConfig
