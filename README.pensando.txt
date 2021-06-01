@@ -141,7 +141,9 @@ The SIM mode library nvme_sim.so communicates with the NVME-SDK, which in turns 
                                |____________________|
              
 
+
     nvme_sim.so (mode="SIM")                              nvme.so (mode = "PCIE")
+
     ____________________                               _____________________________
    |                    |                              |                            |
    | SIM glue=          |                              | pyNVME SPDK extensions =   | 
@@ -149,6 +151,10 @@ The SIM mode library nvme_sim.so communicates with the NVME-SDK, which in turns 
    |____________________|                              | src/driver/spdk-extensions |
                                                        |____________________________|
 
+                                                       _____________________________
+                                                       |                            |
+                                                       |      NVME SPDK driver      |
+                                                       |____________________________|
     _______________________
    |                       |                           _____________________________
    | NVME-Test SDK =       |                           |                            |
