@@ -229,6 +229,7 @@ void log_ctrlr_completion_buf_id_controller(sim_cmd_log_entry_t *cmd_log_entry)
     LOG_FIELD_HEX(resp, cqes, "Completion queue entry-size min-max");
     LOG_FIELD_INT(resp, maxcmd, NULL);
     LOG_FIELD_INT(resp, nn, "Number of namespaces");
+    LOG_FIELD_INT(resp, npss, "Number of power-states");
     LOG_FIELD_HEX(resp, subnqn, "Subsystem NQN");
 
     LOG_TYPE_BANNER("Identify Controller Response", "END");

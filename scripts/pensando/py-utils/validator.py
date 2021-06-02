@@ -5,12 +5,13 @@ import configStore as CfgStore
 import cParser as Parser
 
 class Field:
-    def __init__(self, name, nodeInCfg, nodeInSpec):
+    def __init__(self, name, nodeInCfg, nodeInSpec, isGlobal=False):
         self.structNodeInCfg = nodeInCfg
         self.pathToCfgField = nodeInCfg.split(".")
         self.structNodeInSpec = nodeInSpec
         self.pathToSpecField = nodeInSpec.split('.')
         self.name = name
+        self.isGlobalCfg = isGlobal
 
     def compare(self, rootObj, compareWith):
         pass
@@ -36,21 +37,19 @@ class Field:
         assert False, "Unexpected code path"
 
     def __repr__(self):
-        myself = "{ " + self.name + "(" + self.type + ") " + "spec @" + self.structNodeInSpec + ", cfg @" + self.structNodeInCfg + "}"
+        myself = "{ " + self.name + "(" + self.type + ") " + "spec @" + self.structNodeInSpec + ", cfg " + ("(Global)" if self.isGlobalCfg  else "(Object Specific)") + "@" + self.structNodeInCfg + "}"
         return myself
 
-class FieldString(Field):
-    def __init__(self, name, nodeInCfg, nodeInSpec):
-        super().__init__(name, nodeInCfg, nodeInSpec)
-        self.type = "str"
+    def getCfgField(self, rootObj):
+        cfgValue = None
 
-    def compare(self, rootObj, compareWith):
-        specValue = self.getSpecField(compareWith)
-        fullPathAsList = rootObj.split('.') # rootObj can itself be a path, e.g. nvme0.nn0
-        fullPathAsList.extend(self.pathToCfgField)
-
-        # convert the config value (string) to an array of ascii codes, before comarison
-        cfgValue = CfgStore.getConfigDeep(fullPathAsList)
+        if (self.isGlobalCfg):
+            # ignore rootObj - we know it is not associated with an obj
+            cfgValue = CfgStore.getGlobalConfigDeep(self.pathToCfgField)
+        else:
+            fullPathAsList = rootObj.split('.') # rootObj can itself be a path, e.g. nvme0.nn0
+            fullPathAsList.extend(self.pathToCfgField)
+            cfgValue = CfgStore.getConfigDeep(fullPathAsList)
 
         if None == cfgValue:
             # value not found in store, don't fail the test
@@ -58,6 +57,19 @@ class FieldString(Field):
             logging.warning("(STR) %s should have been in Cfg Store at %s.%s", self.name, rootObj, self.pathToCfgField)
             logging.warning(CfgStore.getAllConfig())
             return
+        
+        return cfgValue
+
+class FieldString(Field):
+    def __init__(self, name, nodeInCfg, nodeInSpec, isGlobal=False):
+        super().__init__(name, nodeInCfg, nodeInSpec, isGlobal)
+        self.type = "str"
+
+    def compare(self, rootObj, compareWith):
+        specValue = self.getSpecField(compareWith)
+  
+        # convert the config value (string) to an array of ascii codes, before comarison
+        cfgValue = self.getCfgField(rootObj)
 
         cfgValueAsAscii = list( map( ord, cfgValue))
 
@@ -66,7 +78,7 @@ class FieldString(Field):
         if shortenedCompvalue != cfgValueAsAscii:
             logging.error("Object %s, field %s, path %s, spec-field %s type STR", rootObj, self.name, self.structNodeInCfg, self.structNodeInSpec)
             logging.error("Expected (and expected as byte-array)")
-            logging.error(CfgStore.getConfigDeep(fullPathAsList))
+            logging.error(cfgValue)
             logging.error(cfgValueAsAscii)
             logging.error("Got (raw, comparison-range)")
             logging.error(specValue)
@@ -74,23 +86,14 @@ class FieldString(Field):
             assert False
 
 class FieldInt(Field):
-    def __init__(self, name, nodeInCfg, nodeInSpec):
-        super().__init__(name, nodeInCfg, nodeInSpec)
+    def __init__(self, name, nodeInCfg, nodeInSpec, isGlobal=False):
+        super().__init__(name, nodeInCfg, nodeInSpec, isGlobal)
         self.type = "int"
 
     def compare(self, rootObj, compareWith):
         specValue = self.getSpecField(compareWith)
-        fullPathAsList = rootObj.split('.') # rootObj can itself be a path, e.g. nvme0.nn0
-        fullPathAsList.extend(self.pathToCfgField)
 
-        cfgValue = CfgStore.getConfigDeep(fullPathAsList)
-
-        if None == cfgValue:
-            # value not found in store, don't fail the test
-            warnings.warn("(INT) NOT FOUND in store " + rootObj + "." + self.structNodeInCfg)
-            logging.warning("(INT) %s should have been in Cfg Store at %s.%s", self.name, rootObj, self.pathToCfgField)
-            logging.warning(CfgStore.getAllConfig())
-            return
+        cfgValue = self.getCfgField(rootObj)
 
         if isinstance(cfgValue, int):
             cfgAsInt = cfgValue
@@ -106,23 +109,14 @@ class FieldInt(Field):
             assert False
 
 class FieldBytes(Field):
-    def __init__(self, name, nodeInCfg, nodeInSpec):
-        super().__init__(name, nodeInCfg, nodeInSpec)
+    def __init__(self, name, nodeInCfg, nodeInSpec, isGlobal=False):
+        super().__init__(name, nodeInCfg, nodeInSpec, isGlobal)
         self.type = "bytes"
 
     def compare(self, rootObj, compareWith):
         specValue = self.getSpecField(compareWith)
-        fullPathAsList = rootObj.split('.') # rootObj can itself be a path, e.g. nvme0.nn0
-        fullPathAsList.extend(self.pathToCfgField)
 
-        cfgValue = CfgStore.getConfigDeep(fullPathAsList)
-
-        if None == cfgValue:
-            # value not found in store, don't fail the test
-            warnings.warn("(Bytes) NOT FOUND in store " + rootObj + "." + self.structNodeInCfg)
-            logging.warning("(Bytes) %s should have been in Cfg Store at %s.%s", self.name, rootObj, self.pathToCfgField)
-            logging.warning(CfgStore.getAllConfig())
-            return
+        cfgValue = self.getCfgField(rootObj)
 
         cfgAsBytes = bytes.fromhex(cfgValue)
         specValueAsBytes = bytes(specValue)
@@ -165,7 +159,11 @@ gControllerValidator = StructValidator([
     FieldString("NQN", "nqn", "subnqn"),
     FieldString("Model Number", "nqn", "subnqn"),
     FieldInt("Namespace Count", "ns_count", "nn"),
-    FieldString("Firmware Revision", "fw_rev", "fr")
+    FieldString("Firmware Revision", "fw_rev", "fr"),
+
+    # globals
+    FieldInt("Number of Power-States supported", "ctrlr_cfg.number_of_power_states_supported", "npss", True)
+
 ], "spdk_nvme_ctrlr_data", "Identify Controller Response")
 
 # external API

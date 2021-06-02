@@ -39,7 +39,10 @@
                     "args": []
                 },
 
-                "test_config": "../../../sim/nvme-test-repo-2021-05-28/nvme-test/tools/nvme_testcfg.json"
+                "test_config": {
+                    "objects": ["../../../sim/nvme-test-repo-2021-05-28/nvme-test/tools/nvme_testcfg.json"],
+                    "globals": ["../../../sim/nvme-test-repo-2021-05-28/nvme-test/run/conf/apollo/nvme/nvme_config.json"]
+                }
             },
 
             {
@@ -55,7 +58,10 @@
                     "args": ["-H"]
                 },
 
-                "test_config": "batch0_cfg.json"
+                "test_config": {
+                    "objects": ["batch0_cfg.json"],
+                    "globals": []
+                }
             },
 
             {
@@ -71,7 +77,10 @@
                     "args": []
                 },
 
-                "test_config": "batch2_cfg.json"
+                "test_config": {
+                    "objects": ["batch2_cfg.json"],
+                    "globals": []
+                }
             }
         ],
 
