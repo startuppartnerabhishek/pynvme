@@ -68,7 +68,10 @@ def pytest_addoption(parser):
         "--conf", action="store", default="conf/simconf.json", help="environment configuration"
     )
     parser.addoption(
-        "--agentconf", action="store", default="conf/sample_nvme_testcfg.json", help="environment configuration"
+        "--agentconf", action="store", default="conf/sample_nvme_testcfg.json", help="agent object configuration"
+    )
+    parser.addoption(
+        "--agentglobals", action="store", default="conf/sample_nvme_globals_config.json", help="agent global configuration"
     )
 
 def pytest_configure(config):
@@ -81,7 +84,8 @@ def pytest_configure(config):
 
     deviceMode = config.getoption("--deviceMode")
     conf = config.getoption("--conf")
-    agentconf = config.getoption("--agentconf")
+    agentobjconf = config.getoption("--agentconf")
+    agentglobalconf = config.getoption("--agentglobals")
     driverModule = "nvme_sim"
     
     if deviceMode == "PCIE":
@@ -102,13 +106,26 @@ def pytest_configure(config):
         "driverModule": driverModule,
         "config_json": sim_config,
         "config_as_string": sim_config_as_string,
-        "initial_agent_conf_file": agentconf
+        "initial_agent_conf_file": agentobjconf,
+        "intial_agent_global_conf_file": agentglobalconf
     }
 
     globalBatchCtrl = B.BatchControl(sim_config)
 
-    #CfgStore.refreshConfig(agentconf)
-    CfgStore.refreshConfig("conf/sample_nvme_testcfg.json")
+
+    CfgStore.refreshConfig({
+                            "objects": [agentobjconf],
+                            "globals": [agentglobalconf]
+                           })
+
+    """
+    CfgStore.refreshConfig(
+        {
+            "objects": ["conf/sample_nvme_testcfg.json"],
+            "globals": ["conf/sample_nvme_globals_config.json"]
+            }
+    )
+    """
 
     globalBatchCtrl.print()
 

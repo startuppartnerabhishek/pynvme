@@ -2,15 +2,17 @@ import json
 import logging
 
 __gCurrentConfig = None
-__gConfigFileListSeparator = ';'
 
 __gNsvCfgCtrlrTag = "ctrlr_list"
 __gNsvCfgCtrlrNsTag = "ns_list"
+__gTestCfgObjectFileListTag = "objects"
+__gTestCfgGlobalsFileListTag = "globals"
 gCtrlrNsCountTag = "ns_count"
 
 # example, access with rootObj = "nvme2", or "nvme1.ns2" etc.
 gControllerPrefix = "nvme"
 gNameSpacePrefix = "ns"
+gConfigStoreGlobalsField = "globals_cfg"
 
 
 # translate incoming config to a format easily usable for pynvme tests
@@ -43,26 +45,22 @@ def __translateConfigNsvTestCfg(aCfg, controllerCount):
 
     return newConfig, ctrlrCount
 
-def refreshConfig(config_files):
+def refreshObjectConfig(object_file_list):
     global __gCurrentConfig
-    global gConfigFileListSeparator
     i = 0
+
     controllerCount = 0
 
-    __gCurrentConfig = None
-
-    if (None == config_files):
+    if (None == object_file_list):
         return
 
-    cfg_file_list = config_files.split(__gConfigFileListSeparator)
+    cfg_file_list = object_file_list
     fileCount = len(cfg_file_list)
 
     # print("%s - %u file(s)", cfg_file_list, fileCount)
 
     if (fileCount <= 0):
         return
-
-    __gCurrentConfig = {}
 
     # top level keys can be common, but internal keys should not conflict
     while i < fileCount:
@@ -91,8 +89,65 @@ def refreshConfig(config_files):
             # print("Updated config")
             # print(__gCurrentConfig)
 
-    logging.info("Refreshed with Config from file(s) %s, %u controllers", cfg_file_list, controllerCount)
+    # print("Refreshed with Object Config from file(s) %s, %u controllers", cfg_file_list, controllerCount)
+
+
+def refreshGobalsConfig(globals_file_list):
+    global __gCurrentConfig
+    i = 0
+
+    __gCurrentConfig[gConfigStoreGlobalsField] = {}
+
+    if (None == globals_file_list):
+        return
+
+    cfg_file_list = globals_file_list
+    fileCount = len(cfg_file_list)
+
+    # print("%s - %u file(s)", cfg_file_list, fileCount)
+
+    if (fileCount <= 0):
+        return
+
+    # top level keys can be common, but internal keys should not conflict
+    while i < fileCount:
+        globals_config_file = cfg_file_list[i]
+        i += 1
+
+        with open(globals_config_file, "r") as f:
+            aGlobalConfig = json.load(f)
+
+            # make a best effort to merge top-level config-store keys
+            for k in aGlobalConfig:
+                if k in __gCurrentConfig[gConfigStoreGlobalsField]:
+                    __gCurrentConfig[gConfigStoreGlobalsField][k].update(aGlobalConfig[k])
+                else:
+                    __gCurrentConfig[gConfigStoreGlobalsField][k] = aGlobalConfig[k]
+
+    # print("Refreshed with Global Config from file(s) %s", cfg_file_list)
+
+def refreshConfig(test_config):
+    global __gCurrentConfig
+    global __gTestCfgObjectFileListTag
+    global __gTestCfgGlobalsFileListTag
+
+    # print("refreshConfig - Entered")
+    # print(test_config)
+    logging.info("refreshConfig - Entered")
+    logging.info(test_config)
+
+    __gCurrentConfig = {}
+
+    if (__gTestCfgObjectFileListTag in test_config):
+        refreshObjectConfig(test_config[__gTestCfgObjectFileListTag])
+
+    if (__gTestCfgGlobalsFileListTag in test_config):
+        refreshGobalsConfig(test_config[__gTestCfgGlobalsFileListTag])
+
+    logging.info("Refreshed Config")
     logging.debug(__gCurrentConfig)
+    # print("Refreshed Config")
+    # print(__gCurrentConfig)
 
 def getConfigDeep(node_path_list):
     global __gCurrentConfig
@@ -113,6 +168,13 @@ def getConfigDeep(node_path_list):
         component_idx += 1
 
     return current_node
+
+def getGlobalConfigDeep(node_path_list):
+    node_name_list_for_globals = [gConfigStoreGlobalsField]
+
+    node_name_list_for_globals.extend(node_path_list)
+
+    return getConfigDeep(node_name_list_for_globals)
 
 def setConfigDeep(node_path_list, new_value):
     global __gCurrentConfig
