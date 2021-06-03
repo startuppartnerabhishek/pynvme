@@ -18,7 +18,11 @@ set(AGENT_INCLUDE_DIR_CONF_KEY .global.nsv_test_root_path)
 execute_process(COMMAND jq -rj ${AGENT_INCLUDE_DIR_CONF_KEY} ${CONF_FILE} OUTPUT_VARIABLE NSV_ROOT)
 message(----NSV_ROOT----- = ${NSV_ROOT})
 
-set(AGENT_LIB_INCLUDE_DIR "../${NSV_ROOT}/sim_libs")
+if (NOT IS_ABSOLUTE ${NSV_ROOT})
+        set(AGENT_LIB_INCLUDE_DIR "../${NSV_ROOT}/sim_libs")
+else()
+        set(AGENT_LIB_INCLUDE_DIR "${NSV_ROOT}/sim_libs")
+endif()
 
 message(---AGENT-LIB-INCLUDE-DIR------  = ${AGENT_LIB_INCLUDE_DIR})
 
