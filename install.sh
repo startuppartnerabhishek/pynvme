@@ -72,7 +72,7 @@ make spdk                                    # compile SPDK
 make                                         # compile pynvme
 
 #default log directory
-mkdir logs
+mkdir -p logs
 
 # quick test after compile
 #make setup
