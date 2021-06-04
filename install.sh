@@ -63,6 +63,7 @@ cd dpdk && git checkout pynvme_2.0 && cd ..
 ./configure --without-isal && cd ..
 
 # setup srv_sim dependencies
+rm -rf src/build
 mkdir -p src/build
 cd src/build && cmake ../ && cd ..
 
