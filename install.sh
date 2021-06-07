@@ -65,7 +65,7 @@ cd dpdk && git checkout pynvme_2.0 && cd ..
 # setup srv_sim dependencies
 rm -rf src/build
 mkdir -p src/build
-cd src/build && cmake ../ && cd ..
+cd src/build && cmake ../ && cd ../..
 
 # compile
 make spdk                                    # compile SPDK
